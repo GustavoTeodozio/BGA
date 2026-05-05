@@ -50,9 +50,9 @@ export function Toast({ message, type, onClose, duration = 4000 }: ToastProps) {
       case 'success':
         return 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-green-400';
       case 'error':
-        return 'bg-gradient-to-r from-red-500 to-rose-600 text-white border-red-400';
+        return 'bg-gradient-to-r from-wine-500 to-rose-600 text-white border-wine-400';
       case 'warning':
-        return 'bg-gradient-to-r from-amber-500 to-orange-600 text-white border-amber-400';
+        return 'bg-gradient-to-r from-amber-500 to-gold-600 text-white border-amber-400';
       case 'info':
         return 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white border-blue-400';
     }

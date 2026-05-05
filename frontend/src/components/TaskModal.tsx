@@ -2,40 +2,43 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import api from '../api/client';
 import type { Task, TaskStatus, TaskCategory, TaskPriority } from '../types/task';
+import { useDialog } from './ConfirmDialog';
 
 interface TaskModalProps {
   task: Task | null;
   initialStatus?: TaskStatus | null;
   onClose: () => void;
   onSuccess: () => void;
+  apiPrefix?: string;
 }
 
 const CATEGORIES: { value: TaskCategory; label: string }[] = [
-  { value: 'FACEBOOK_ADS', label: 'Anúncios Facebook' },
-  { value: 'INSTAGRAM_ADS', label: 'Anúncios Instagram' },
-  { value: 'GOOGLE_ADS', label: 'Google Ads' },
-  { value: 'CONTENT', label: 'Conteúdo' },
-  { value: 'LANDING_PAGE', label: 'Página de Destino' },
-  { value: 'EMAIL_MARKETING', label: 'Email Marketing' },
-  { value: 'TRAFFIC', label: 'Tráfego' },
-  { value: 'SEO', label: 'SEO' },
-  { value: 'SOCIAL_MEDIA', label: 'Redes Sociais' },
-  { value: 'COPYWRITING', label: 'Copywriting' },
+  { value: 'BRIEFING', label: 'Briefing' },
+  { value: 'PROJETO_3D', label: 'Projeto 3D' },
+  { value: 'ORCAMENTO', label: 'Orçamento' },
+  { value: 'APROVACAO_CLIENTE', label: 'Aprovação do Cliente' },
+  { value: 'PRODUCAO', label: 'Produção' },
+  { value: 'LOGISTICA', label: 'Logística' },
+  { value: 'MONTAGEM', label: 'Montagem' },
+  { value: 'EVENTO', label: 'Evento' },
+  { value: 'DESMONTAGEM', label: 'Desmontagem' },
   { value: 'DESIGN', label: 'Design' },
-  { value: 'VIDEO', label: 'Vídeo' },
   { value: 'OTHER', label: 'Outro' },
 ];
 
 const PRIORITIES: { value: TaskPriority; label: string; color: string }[] = [
   { value: 'LOW', label: 'Baixa', color: 'bg-gray-100 text-gray-700' },
   { value: 'MEDIUM', label: 'Média', color: 'bg-blue-100 text-blue-700' },
-  { value: 'HIGH', label: 'Alta', color: 'bg-orange-100 text-orange-700' },
-  { value: 'URGENT', label: 'Urgente', color: 'bg-red-100 text-red-700' },
+  { value: 'HIGH', label: 'Alta', color: 'bg-gold-100 text-gold-700' },
+  { value: 'URGENT', label: 'Urgente', color: 'bg-wine-100 text-wine-700' },
 ];
 
-export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess }: TaskModalProps) {
+export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess, apiPrefix = '/admin' }: TaskModalProps) {
   const queryClient = useQueryClient();
+  const { confirm, alert } = useDialog();
+  const isAdmin = apiPrefix === '/admin';
   const [activeTab, setActiveTab] = useState<'details' | 'checklist' | 'comments' | 'metrics'>('details');
+  const [clientTenantId, setClientTenantId] = useState<string>(initialTask?.clientTenantId ?? '');
   
   // Buscar dados atualizados da task se já existe
   const { data: fetchedTask, refetch } = useQuery({
@@ -43,7 +46,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
     queryFn: async () => {
       if (!initialTask?.id) return null;
       console.log('[TaskModal] Buscando task:', initialTask.id);
-      const response = await api.get(`/admin/tasks/${initialTask.id}`);
+      const response = await api.get(`${apiPrefix}/tasks/${initialTask.id}`);
       console.log('[TaskModal] Task recebida:', response.data);
       return response.data;
     },
@@ -54,6 +57,16 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
 
   // Usar task atualizada ou inicial
   const task = fetchedTask || initialTask;
+
+  // Fetch registered clients (admin only, for linking)
+  const { data: clientsData } = useQuery({
+    queryKey: ['admin', 'clients'],
+    queryFn: async () => {
+      const r = await api.get('/admin/clients');
+      return r.data as { id: string; name: string }[];
+    },
+    enabled: isAdmin,
+  });
   
   const [formData, setFormData] = useState({
     title: task?.title || '',
@@ -81,6 +94,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
         dueDate: task.dueDate?.split('T')[0] || '',
         scheduledAt: task.scheduledAt?.split('T')[0] || '',
       });
+      setClientTenantId(task.clientTenantId ?? '');
     }
   }, [task, initialStatus]);
 
@@ -90,7 +104,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
   const saveMutation = useMutation({
     mutationFn: async () => {
       // Limpar dados: converter strings vazias para undefined
-      const cleanedData = {
+      const cleanedData: any = {
         title: formData.title,
         description: formData.description || undefined,
         category: formData.category,
@@ -101,14 +115,17 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
         dueDate: formData.dueDate || undefined,
         scheduledAt: formData.scheduledAt || undefined,
       };
+      if (isAdmin) {
+        cleanedData.clientTenantId = clientTenantId || null;
+      }
       
       console.log('[TaskModal] Salvando task com dados:', cleanedData);
       if (task) {
-        const response = await api.patch(`/admin/tasks/${task.id}`, cleanedData);
+        const response = await api.patch(`${apiPrefix}/tasks/${task.id}`, cleanedData);
         console.log('[TaskModal] Task atualizada:', response.data);
         return response.data;
       } else {
-        const response = await api.post('/admin/tasks', cleanedData);
+        const response = await api.post(`${apiPrefix}/tasks`, cleanedData);
         console.log('[TaskModal] Task criada:', response.data);
         return response.data;
       }
@@ -126,7 +143,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (task) {
-        await api.delete(`/admin/tasks/${task.id}`);
+        await api.delete(`${apiPrefix}/tasks/${task.id}`);
       }
     },
     onSuccess: () => {
@@ -135,15 +152,19 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
     },
   });
 
-  const handleDelete = () => {
-    if (confirm('Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.')) {
-      deleteMutation.mutate();
-    }
+  const handleDelete = async () => {
+    const ok = await confirm({
+      title: 'Excluir tarefa',
+      message: 'Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar',
+    });
+    if (ok) deleteMutation.mutate();
   };
 
   const addCommentMutation = useMutation({
     mutationFn: async (content: string) => {
-      await api.post(`/admin/tasks/${task?.id}/comments`, { content });
+      await api.post(`${apiPrefix}/tasks/${task?.id}/comments`, { content });
     },
     onSuccess: async () => {
       setNewComment('');
@@ -156,7 +177,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
   const addChecklistMutation = useMutation({
     mutationFn: async (title: string) => {
       console.log('[TaskModal] Adicionando item checklist:', title);
-      const response = await api.post(`/admin/tasks/${task?.id}/checklist`, { title });
+      const response = await api.post(`${apiPrefix}/tasks/${task?.id}/checklist`, { title });
       console.log('[TaskModal] Item adicionado:', response.data);
       return response.data;
     },
@@ -171,7 +192,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
   const toggleChecklistMutation = useMutation({
     mutationFn: async ({ itemId, isCompleted }: { itemId: string; isCompleted: boolean }) => {
       console.log('[TaskModal] Toggle checklist:', { itemId, isCompleted });
-      const response = await api.patch(`/admin/tasks/checklist/${itemId}`, { isCompleted });
+      const response = await api.patch(`${apiPrefix}/tasks/checklist/${itemId}`, { isCompleted });
       console.log('[TaskModal] Toggle sucesso:', response.data);
       return response.data;
     },
@@ -184,7 +205,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
 
   const deleteChecklistMutation = useMutation({
     mutationFn: async (itemId: string) => {
-      await api.delete(`/admin/tasks/checklist/${itemId}`);
+      await api.delete(`${apiPrefix}/tasks/checklist/${itemId}`);
     },
     onSuccess: async () => {
       await refetch();
@@ -194,7 +215,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
 
   const deleteCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
-      await api.delete(`/admin/tasks/comments/${commentId}`);
+      await api.delete(`${apiPrefix}/tasks/comments/${commentId}`);
     },
     onSuccess: async () => {
       await refetch();
@@ -206,7 +227,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
       <div className="bg-white rounded-xl sm:rounded-2xl max-w-4xl w-full shadow-2xl animate-slide-up max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-purple-50 to-orange-50">
+        <div className="p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-wine-50 to-gold-50">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800 font-outer-sans">
             {task ? 'Editar Tarefa' : 'Nova Tarefa'}
           </h2>
@@ -247,8 +268,8 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
               onClick={() => setActiveTab(tab.id as any)}
               className={`px-3 sm:px-5 py-2 sm:py-3 font-bold font-outer-sans rounded-t-xl transition-all duration-300 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap text-sm sm:text-base ${
                 activeTab === tab.id
-                  ? 'bg-white text-purple-600 border-t-4 border-x-2 border-purple-600 shadow-lg transform scale-105 -mb-0.5'
-                  : 'text-gray-600 hover:text-purple-600 hover:bg-white hover:bg-opacity-50'
+                  ? 'bg-white text-wine-600 border-t-4 border-x-2 border-wine-600 shadow-lg transform scale-105 -mb-0.5'
+                  : 'text-gray-600 hover:text-wine-600 hover:bg-white hover:bg-opacity-50'
               }`}
             >
               {tab.icon}
@@ -268,8 +289,8 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-outer-sans placeholder:text-gray-500"
-                  placeholder="Ex: Criar campanha de Facebook Ads"
+                  className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wine-500 font-outer-sans placeholder:text-gray-500"
+                  placeholder="Ex: Montagem stand Feira de Tecnologia"
                 />
               </div>
 
@@ -279,7 +300,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={4}
-                  className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-outer-sans placeholder:text-gray-500"
+                  className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wine-500 font-outer-sans placeholder:text-gray-500"
                   placeholder="Descreva os detalhes da tarefa..."
                 />
               </div>
@@ -296,7 +317,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                     type="text"
                     value={formData.assigneeName}
                     onChange={(e) => setFormData({ ...formData, assigneeName: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-outer-sans placeholder:text-gray-500"
+                    className="w-full pl-10 pr-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wine-500 font-outer-sans placeholder:text-gray-500"
                     placeholder="Ex: João Silva, Maria Santos"
                   />
                 </div>
@@ -308,7 +329,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value as TaskCategory })}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-outer-sans"
+                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wine-500 font-outer-sans"
                   >
                     {CATEGORIES.map((cat) => (
                       <option key={cat.value} value={cat.value}>
@@ -323,7 +344,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                   <select
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-outer-sans"
+                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wine-500 font-outer-sans"
                   >
                     {PRIORITIES.map((priority) => (
                       <option key={priority.value} value={priority.value}>
@@ -341,7 +362,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                     type="date"
                     value={formData.dueDate}
                     onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-outer-sans"
+                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wine-500 font-outer-sans"
                   />
                 </div>
 
@@ -351,7 +372,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                     type="date"
                     value={formData.scheduledAt}
                     onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
-                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-outer-sans"
+                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wine-500 font-outer-sans"
                   />
                 </div>
               </div>
@@ -362,10 +383,35 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                   type="text"
                   value={formData.tags}
                   onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                  className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-outer-sans placeholder:text-gray-500"
+                  className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wine-500 font-outer-sans placeholder:text-gray-500"
                   placeholder="Ex: urgente, Q4, lançamento"
                 />
               </div>
+
+              {isAdmin && clientsData && clientsData.length > 0 && (
+                <div className="border-t border-gray-100 pt-4 mt-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1 font-outer-sans">
+                    Direcionar ao Cliente
+                  </label>
+                  <p className="text-xs text-gray-400 mb-2 font-outer-sans">O cliente selecionado poderá acompanhar esta tarefa no painel dele.</p>
+                  <select
+                    value={clientTenantId}
+                    onChange={(e) => setClientTenantId(e.target.value)}
+                    className="w-full px-4 py-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wine-500 font-outer-sans"
+                  >
+                    <option value="">— Sem cliente vinculado —</option>
+                    {clientsData.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                  {clientTenantId && (
+                    <p className="text-xs text-emerald-600 mt-1.5 font-outer-sans flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                      Vinculado — cliente verá esta tarefa no dashboard.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -383,7 +429,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                     }
                   }}
                   disabled={addChecklistMutation.isPending}
-                  className="flex-1 px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-outer-sans disabled:opacity-50 placeholder:text-gray-500"
+                  className="flex-1 px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wine-500 font-outer-sans disabled:opacity-50 placeholder:text-gray-500"
                   placeholder="Adicionar novo item..."
                 />
                 <button
@@ -415,7 +461,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                             toggleChecklistMutation.mutate({ itemId: item.id, isCompleted: newChecked });
                           }}
                           disabled={toggleChecklistMutation.isPending}
-                          className="peer w-5 h-5 border-2 border-gray-300 rounded checked:bg-purple-600 checked:border-purple-600 focus:ring-2 focus:ring-purple-500 cursor-pointer transition-all appearance-none disabled:opacity-50"
+                          className="peer w-5 h-5 border-2 border-gray-300 rounded checked:bg-wine-600 checked:border-wine-600 focus:ring-2 focus:ring-wine-500 cursor-pointer transition-all appearance-none disabled:opacity-50"
                         />
                         {/* Checkmark SVG - aparece quando marcado */}
                         <svg 
@@ -427,18 +473,17 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3.5} d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
-                      <span className={`flex-1 font-outer-sans transition-all duration-200 ${item.isCompleted ? 'line-through text-gray-500' : 'text-gray-800 group-hover:text-purple-600'}`}>
+                      <span className={`flex-1 font-outer-sans transition-all duration-200 ${item.isCompleted ? 'line-through text-gray-500' : 'text-gray-800 group-hover:text-wine-600'}`}>
                         {item.title}
                       </span>
                     </label>
                     <button
-                      onClick={() => {
-                        if (confirm('Deseja excluir este item?')) {
-                          deleteChecklistMutation.mutate(item.id);
-                        }
+                      onClick={async () => {
+                        const ok = await confirm({ title: 'Excluir item', message: 'Deseja excluir este item?', confirmText: 'Excluir' });
+                        if (ok) deleteChecklistMutation.mutate(item.id);
                       }}
                       disabled={deleteChecklistMutation.isPending}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-100 text-red-600 transition-all disabled:opacity-50"
+                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-wine-100 text-wine-600 transition-all disabled:opacity-50"
                       title="Excluir item"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -454,8 +499,8 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                 {/* Loading indicator */}
                 {(addChecklistMutation.isPending || toggleChecklistMutation.isPending) && (
                   <div className="flex items-center justify-center py-4">
-                    <div className="flex items-center gap-2 text-purple-600">
-                      <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="flex items-center gap-2 text-wine-600">
+                      <div className="w-5 h-5 border-2 border-wine-600 border-t-transparent rounded-full animate-spin"></div>
                       <span className="text-sm font-outer-sans">Atualizando...</span>
                     </div>
                   </div>
@@ -479,7 +524,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                   }}
                   rows={3}
                   disabled={addCommentMutation.isPending}
-                  className="flex-1 px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-outer-sans disabled:opacity-50 placeholder:text-gray-500"
+                  className="flex-1 px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wine-500 font-outer-sans disabled:opacity-50 placeholder:text-gray-500"
                   placeholder="Escreva um comentário... (Enter para enviar, Shift+Enter para quebrar linha)"
                 />
                 <button
@@ -503,7 +548,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                   <div key={comment.id} className="p-4 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-all">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-orange-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-wine-500 to-gold-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
                           {comment.user.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -512,13 +557,12 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                         </div>
                       </div>
                       <button
-                        onClick={() => {
-                          if (confirm('Deseja excluir este comentário?')) {
-                            deleteCommentMutation.mutate(comment.id);
-                          }
+                        onClick={async () => {
+                          const ok = await confirm({ title: 'Excluir comentário', message: 'Deseja excluir este comentário?', confirmText: 'Excluir' });
+                          if (ok) deleteCommentMutation.mutate(comment.id);
                         }}
                         disabled={deleteCommentMutation.isPending}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-100 text-red-600 transition-all disabled:opacity-50"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-wine-100 text-wine-600 transition-all disabled:opacity-50"
                         title="Excluir comentário"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -536,8 +580,8 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                 {/* Loading indicator */}
                 {(addCommentMutation.isPending || deleteCommentMutation.isPending) && (
                   <div className="flex items-center justify-center py-4">
-                    <div className="flex items-center gap-2 text-purple-600">
-                      <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="flex items-center gap-2 text-wine-600">
+                      <div className="w-5 h-5 border-2 border-wine-600 border-t-transparent rounded-full animate-spin"></div>
                       <span className="text-sm font-outer-sans">Processando...</span>
                     </div>
                   </div>
@@ -571,25 +615,25 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
                   R$ {(task.metrics?.spent || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
-              <div className="p-5 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200 shadow-md hover:shadow-lg transition-shadow">
+              <div className="p-5 bg-gradient-to-br from-wine-50 to-pink-50 rounded-xl border-2 border-wine-200 shadow-md hover:shadow-lg transition-shadow">
                 <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-wine-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
-                  <p className="text-sm text-purple-700 font-bold font-outer-sans">Leads</p>
+                  <p className="text-sm text-wine-700 font-bold font-outer-sans">Leads</p>
                 </div>
-                <p className="text-3xl font-black text-purple-600">
+                <p className="text-3xl font-black text-wine-600">
                   {task.metrics?.leadsActual || 0} / {task.metrics?.leadGoal || 0}
                 </p>
               </div>
-              <div className="p-5 bg-gradient-to-br from-orange-50 to-yellow-50 rounded-xl border-2 border-orange-200 shadow-md hover:shadow-lg transition-shadow">
+              <div className="p-5 bg-gradient-to-br from-gold-50 to-yellow-50 rounded-xl border-2 border-gold-200 shadow-md hover:shadow-lg transition-shadow">
                 <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                   </svg>
-                  <p className="text-sm text-orange-700 font-bold font-outer-sans">ROAS</p>
+                  <p className="text-sm text-gold-700 font-bold font-outer-sans">ROAS</p>
                 </div>
-                <p className="text-3xl font-black text-orange-600">
+                <p className="text-3xl font-black text-gold-600">
                   {task.metrics?.roas ? `${task.metrics.roas.toFixed(2)}x` : '-'}
                 </p>
               </div>
@@ -642,7 +686,7 @@ export function TaskModal({ task: initialTask, initialStatus, onClose, onSuccess
               <button
                 onClick={handleDelete}
                 disabled={deleteMutation.isPending}
-                className="w-full sm:w-auto px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-2 border-red-200 hover:border-red-300 rounded-lg font-semibold font-outer-sans transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
+                className="w-full sm:w-auto px-4 py-2 bg-wine-50 hover:bg-wine-100 text-wine-600 hover:text-wine-700 border-2 border-wine-200 hover:border-wine-300 rounded-lg font-semibold font-outer-sans transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

@@ -80,6 +80,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         tenantId: user.tenantId,
+        avatar: user.avatar ?? undefined,
       },
     };
   }

@@ -153,6 +153,7 @@ const updateTaskSchema = z.object({
   publishedAt: z.string().optional().transform(val => val && val.trim() !== '' ? new Date(val) : undefined),
   tags: z.string().optional(),
   position: z.number().optional(),
+  clientTenantId: z.string().nullable().optional(),
 });
 
 const commentSchema = z.object({
@@ -208,7 +209,8 @@ export const listTasks = async (req: Request, res: Response) => {
   if (!tenantId) throw new AppError('Tenant não encontrado', 400);
 
   const filters = listSchema.parse(req.query);
-  const result = await taskService.listTasks(tenantId, filters);
+  const includeLinked = req.auth?.role === 'CLIENT';
+  const result = await taskService.listTasks(tenantId, { ...filters, includeLinked });
 
   return res.json(result);
 };

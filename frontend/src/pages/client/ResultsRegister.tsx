@@ -9,7 +9,7 @@ export function ResultsRegister() {
   return (
     <div className="px-4 py-6 sm:px-0 animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-orange-500 bg-clip-text text-transparent mb-2 font-outer-sans">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-wine-600 to-gold-500 bg-clip-text text-transparent mb-2 font-outer-sans">
           Registro de Resultados
         </h1>
         <p className="text-gray-600 font-outer-sans">Registre suas vendas e resultados de campanhas</p>
@@ -17,12 +17,12 @@ export function ResultsRegister() {
       
       <div className="card-gradient animate-slide-up">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-wine-500 to-wine-600 flex items-center justify-center shadow-lg">
             <ResultsIcon />
           </div>
           <h2 className="text-2xl font-bold text-gray-800 font-outer-sans">Formulário de Registro</h2>
         </div>
-        <div className="h-64 flex items-center justify-center bg-gradient-to-br from-purple-50 to-orange-50 rounded-lg border border-purple-200">
+        <div className="h-64 flex items-center justify-center bg-gradient-to-br from-wine-50 to-gold-50 rounded-lg border border-wine-200">
           <p className="text-gray-500 font-outer-sans">Formulário de registro será implementado aqui</p>
         </div>
       </div>

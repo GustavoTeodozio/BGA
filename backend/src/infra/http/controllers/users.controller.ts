@@ -7,10 +7,10 @@ import { hashPassword } from '../../../shared/utils/password';
 export const listUsers = async (req: Request, res: Response) => {
   const tenantId = req.auth?.tenantId;
   
-  // Admin pode ver todos os usuários, cliente vê apenas do seu tenant
+  // Todos veem apenas usuários do seu tenant
   const where: any = { isActive: true };
   
-  if (req.auth?.role === 'CLIENT' && tenantId) {
+  if (tenantId) {
     where.tenantId = tenantId;
   }
 
@@ -58,11 +58,12 @@ const createAdminSchema = z.object({
   name: z.string().min(3, 'Nome deve ter ao menos 3 caracteres'),
   email: z.string().email('Email inválido'),
   password: z.string().min(6, 'Senha deve ter ao menos 6 caracteres'),
+  role: z.enum(['ADMIN', 'VENDEDOR', 'PROJETISTA']).default('ADMIN'),
 });
 
 export const createAdmin = async (req: Request, res: Response) => {
   try {
-    const { name, email, password } = createAdminSchema.parse(req.body);
+    const { name, email, password, role } = createAdminSchema.parse(req.body);
 
     // Verificar se email já existe
     const existingUser = await prisma.user.findUnique({
@@ -88,7 +89,7 @@ export const createAdmin = async (req: Request, res: Response) => {
       });
     }
 
-    // Criar admin
+    // Criar usuário — usa o tenant do admin que está criando
     const hashedPassword = await hashPassword(password);
     
     const admin = await prisma.user.create({
@@ -96,8 +97,8 @@ export const createAdmin = async (req: Request, res: Response) => {
         name,
         email,
         password: hashedPassword,
-        role: 'ADMIN',
-        tenantId: systemTenant.id,
+        role: role,
+        tenantId: req.auth?.tenantId || systemTenant.id,
         isActive: true,
       },
       select: {
@@ -133,6 +134,23 @@ const deleteAdminSchema = z.object({
     message: 'Código de confirmação inválido',
   }),
 });
+
+export const updateProfile = async (req: Request, res: Response) => {
+  const userId = req.auth!.userId;
+  const { name, avatar } = req.body as { name?: string; avatar?: string };
+
+  const data: { name?: string; avatar?: string | null } = {};
+  if (name !== undefined) data.name = name;
+  if (avatar !== undefined) data.avatar = avatar || null;
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data,
+    select: { id: true, name: true, email: true, role: true, tenantId: true, avatar: true },
+  });
+
+  return res.json(user);
+};
 
 export const deleteAdmin = async (req: Request, res: Response) => {
   try {

@@ -1,5 +1,4 @@
 -- Criar tipos ENUM que estão faltando no banco de dados
--- Esta migração corrige o problema onde as colunas foram criadas como TEXT ao invés de ENUM
 
 -- TaskStatus ENUM
 DO $$ BEGIN
@@ -43,38 +42,49 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
--- Alterar colunas da tabela Task para usar os tipos ENUM
-ALTER TABLE "Task" 
+-- Alterar colunas da tabela Task (remover DEFAULT antes de converter tipo)
+ALTER TABLE "Task" ALTER COLUMN "status" DROP DEFAULT;
+ALTER TABLE "Task" ALTER COLUMN "category" DROP DEFAULT;
+ALTER TABLE "Task" ALTER COLUMN "priority" DROP DEFAULT;
+
+ALTER TABLE "Task"
     ALTER COLUMN "status" TYPE "TaskStatus" USING "status"::"TaskStatus",
     ALTER COLUMN "category" TYPE "TaskCategory" USING "category"::"TaskCategory",
     ALTER COLUMN "priority" TYPE "TaskPriority" USING "priority"::"TaskPriority";
 
--- Alterar coluna da tabela TaskAttachment para usar MediaType
-ALTER TABLE "TaskAttachment" 
-    ALTER COLUMN "type" TYPE "MediaType" USING "type"::"MediaType";
+ALTER TABLE "Task" ALTER COLUMN "status" SET DEFAULT 'BACKLOG'::"TaskStatus";
+ALTER TABLE "Task" ALTER COLUMN "category" SET DEFAULT 'OTHER'::"TaskCategory";
+ALTER TABLE "Task" ALTER COLUMN "priority" SET DEFAULT 'MEDIUM'::"TaskPriority";
 
--- Alterar coluna da tabela Campaign para usar CampaignStatus
-ALTER TABLE "Campaign" 
-    ALTER COLUMN "status" TYPE "CampaignStatus" USING "status"::"CampaignStatus";
+-- Alterar coluna da tabela TaskAttachment
+ALTER TABLE "TaskAttachment" ALTER COLUMN "type" DROP DEFAULT;
+ALTER TABLE "TaskAttachment" ALTER COLUMN "type" TYPE "MediaType" USING "type"::"MediaType";
+ALTER TABLE "TaskAttachment" ALTER COLUMN "type" SET DEFAULT 'OTHER'::"MediaType";
 
--- Alterar colunas da tabela MediaAsset para usar os tipos ENUM
-ALTER TABLE "MediaAsset" 
-    ALTER COLUMN "type" TYPE "MediaType" USING "type"::"MediaType";
+-- Alterar coluna da tabela Campaign
+ALTER TABLE "Campaign" ALTER COLUMN "status" DROP DEFAULT;
+ALTER TABLE "Campaign" ALTER COLUMN "status" TYPE "CampaignStatus" USING "status"::"CampaignStatus";
+ALTER TABLE "Campaign" ALTER COLUMN "status" SET DEFAULT 'DRAFT'::"CampaignStatus";
+
+-- Alterar colunas da tabela MediaAsset
+ALTER TABLE "MediaAsset" ALTER COLUMN "type" DROP DEFAULT;
+ALTER TABLE "MediaAsset" ALTER COLUMN "type" TYPE "MediaType" USING "type"::"MediaType";
+ALTER TABLE "MediaAsset" ALTER COLUMN "type" SET DEFAULT 'OTHER'::"MediaType";
 
 -- Alterar approvalStatus se a coluna existir
-DO $$ 
+DO $$
 BEGIN
     IF EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'MediaAsset' AND column_name = 'approvalStatus') THEN
-        ALTER TABLE "MediaAsset" 
-            ALTER COLUMN "approvalStatus" TYPE "ApprovalStatus" USING "approvalStatus"::"ApprovalStatus";
+        ALTER TABLE "MediaAsset" ALTER COLUMN "approvalStatus" DROP DEFAULT;
+        ALTER TABLE "MediaAsset" ALTER COLUMN "approvalStatus" TYPE "ApprovalStatus" USING "approvalStatus"::"ApprovalStatus";
     END IF;
 END $$;
 
--- Alterar coluna da tabela CampaignApproval para usar ApprovalStatus
-DO $$ 
+-- Alterar coluna da tabela CampaignApproval
+DO $$
 BEGIN
     IF EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'CampaignApproval' AND column_name = 'status') THEN
-        ALTER TABLE "CampaignApproval" 
-            ALTER COLUMN "status" TYPE "ApprovalStatus" USING "status"::"ApprovalStatus";
+        ALTER TABLE "CampaignApproval" ALTER COLUMN "status" DROP DEFAULT;
+        ALTER TABLE "CampaignApproval" ALTER COLUMN "status" TYPE "ApprovalStatus" USING "status"::"ApprovalStatus";
     END IF;
 END $$;

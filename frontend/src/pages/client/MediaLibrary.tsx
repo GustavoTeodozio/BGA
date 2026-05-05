@@ -4,6 +4,7 @@ import api from '../../api/client';
 import { fixImageUrl } from '../../utils/helpers';
 import { useToast } from '../../hooks/useToast';
 import { Toast } from '../../components/Toast';
+import { useDialog } from '../../components/ConfirmDialog';
 
 // Ícones SVG minimalistas
 const FolderIcon = () => (
@@ -81,6 +82,7 @@ const getTypeIcon = (type: string) => {
 };
 
 export function MediaLibrary() {
+  const { confirm } = useDialog();
   const queryClient = useQueryClient();
   const toast = useToast();
   const [rejectionNote, setRejectionNote] = useState<{ [key: string]: string }>({});
@@ -91,11 +93,11 @@ export function MediaLibrary() {
     queryFn: async () => {
       console.log('[MediaLibrary] Buscando mídias...');
       const response = await api.get('/client/media');
-      console.log('[MediaLibrary] Resposta recebida:', {
-        total: response.data.total,
-        itemsCount: response.data.items?.length || 0,
-        items: response.data.items?.map((item: any) => ({ id: item.id, title: item.title, tenantId: item.tenantId, type: item.type })),
-      });
+      const items = response.data.items ?? [];
+      console.log(`[MediaLibrary] total=${response.data.total} items=${items.length}`);
+      if (items.length > 0) {
+        console.log('[MediaLibrary] primeiro item tenantId:', items[0].tenantId, '| status:', items[0].status);
+      }
       return response.data;
     },
   });
@@ -128,10 +130,9 @@ export function MediaLibrary() {
     },
   });
 
-  const handleApprove = (mediaId: string) => {
-    if (confirm('Deseja aprovar este conteúdo?')) {
-      approveMutation.mutate(mediaId);
-    }
+  const handleApprove = async (mediaId: string) => {
+    const ok = await confirm({ title: 'Aprovar conteúdo', message: 'Deseja aprovar este conteúdo?', confirmText: 'Aprovar', type: 'warning' });
+    if (ok) approveMutation.mutate(mediaId);
   };
 
   const handleReject = (mediaId: string) => {
@@ -156,7 +157,7 @@ export function MediaLibrary() {
       case 'REJECTED':
         return (
           <span 
-            className="px-4 py-2 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl text-xs font-bold font-outer-sans border-2 border-red-400 flex items-center gap-2 cursor-help shadow-md" 
+            className="px-4 py-2 bg-gradient-to-r from-wine-500 to-rose-600 text-white rounded-xl text-xs font-bold font-outer-sans border-2 border-wine-400 flex items-center gap-2 cursor-help shadow-md" 
             title={rejectionNote || 'Conteúdo recusado'}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,7 +169,7 @@ export function MediaLibrary() {
       case 'PENDING':
       default:
         return (
-          <span className="px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-xl text-xs font-bold font-outer-sans border-2 border-amber-300 flex items-center gap-2 shadow-md animate-pulse">
+          <span className="px-4 py-2 bg-gradient-to-r from-amber-400 to-gold-500 text-white rounded-xl text-xs font-bold font-outer-sans border-2 border-amber-300 flex items-center gap-2 shadow-md animate-pulse">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -184,7 +185,7 @@ export function MediaLibrary() {
     return (
       <div className="flex items-center justify-center min-h-[400px] animate-fade-in">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-wine-600 mb-4"></div>
           <p className="text-gray-600 font-outer-sans">Carregando conteúdos...</p>
         </div>
       </div>
@@ -196,17 +197,17 @@ export function MediaLibrary() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-3">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-wine-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-wine-500/30">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent font-outer-sans">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-wine-600 to-indigo-600 bg-clip-text text-transparent font-outer-sans">
               Biblioteca de Mídias
             </h1>
             <p className="text-gray-600 font-outer-sans flex items-center gap-2 mt-1">
-              <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-wine-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               Baixe e visualize os conteúdos disponíveis
@@ -223,13 +224,13 @@ export function MediaLibrary() {
           return (
             <div 
               key={media.id} 
-              className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 animate-slide-up border-2 border-transparent hover:border-purple-300"
+              className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 animate-slide-up border-2 border-transparent hover:border-wine-300"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               {/* Image Preview */}
               {imageUrl ? (
                 <>
-                  <div className="relative mb-4 rounded-t-2xl overflow-hidden bg-gradient-to-br from-purple-100 to-indigo-100 h-56">
+                  <div className="relative mb-4 rounded-t-2xl overflow-hidden bg-gradient-to-br from-wine-100 to-indigo-100 h-56">
                     <img 
                       src={imageUrl} 
                       alt={media.title}
@@ -244,10 +245,10 @@ export function MediaLibrary() {
                     
                     {/* Badge de tipo */}
                     <div className="absolute top-3 left-3 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center gap-1.5">
-                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-wine-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <span className="text-xs font-bold text-purple-700">Imagem</span>
+                      <span className="text-xs font-bold text-wine-700">Imagem</span>
                     </div>
                   </div>
                   <div className="px-5 pb-5">
@@ -272,10 +273,10 @@ export function MediaLibrary() {
                     </video>
                     {/* Badge de tipo */}
                     <div className="absolute top-3 left-3 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center gap-1.5">
-                      <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
-                      <span className="text-xs font-bold text-orange-700">Vídeo</span>
+                      <span className="text-xs font-bold text-gold-700">Vídeo</span>
                     </div>
                   </div>
                   <div className="px-5 pb-5">
@@ -287,8 +288,8 @@ export function MediaLibrary() {
                 </>
               ) : (
                 <>
-                  <div className="relative h-56 bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-100 rounded-t-2xl flex items-center justify-center mb-4">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                  <div className="relative h-56 bg-gradient-to-br from-wine-50 via-indigo-50 to-wine-100 rounded-t-2xl flex items-center justify-center mb-4">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-wine-500 to-indigo-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
                       {getTypeIcon(media.type)}
                     </div>
                     {/* Badge de tipo */}
@@ -313,7 +314,7 @@ export function MediaLibrary() {
               <div className="flex items-center gap-2 mb-4 flex-wrap">
                 {getStatusBadge(media.approvalStatus, media.rejectionNote)}
                 {media.category && (
-                  <span className="px-3 py-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-700 rounded-full text-xs font-bold font-outer-sans border-2 border-purple-200 shadow-sm">
+                  <span className="px-3 py-1.5 bg-gradient-to-r from-wine-50 to-indigo-50 text-wine-700 rounded-full text-xs font-bold font-outer-sans border-2 border-wine-200 shadow-sm">
                     {media.category}
                   </span>
                 )}
@@ -335,7 +336,7 @@ export function MediaLibrary() {
                   <button
                     onClick={() => handleReject(media.id)}
                     disabled={rejectMutation.isPending}
-                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white text-sm flex items-center justify-center gap-2 font-bold font-outer-sans disabled:opacity-50 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-wine-500 to-rose-600 hover:from-wine-600 hover:to-rose-700 text-white text-sm flex items-center justify-center gap-2 font-bold font-outer-sans disabled:opacity-50 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
                   >
                     <XIcon />
                     <span>Recusar</span>
@@ -406,7 +407,7 @@ export function MediaLibrary() {
                     document.body.removeChild(link);
                   }
                 }}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-sm flex items-center justify-center gap-2 font-bold font-outer-sans rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-wine-600 to-indigo-600 hover:from-wine-700 hover:to-indigo-700 text-white text-sm flex items-center justify-center gap-2 font-bold font-outer-sans rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
               >
                 <DownloadIcon />
                 <span>Download</span>
@@ -428,8 +429,8 @@ export function MediaLibrary() {
         })}
         
         {(!data?.items || data.items.length === 0) && (
-          <div className="col-span-full bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-100 rounded-2xl text-center py-20 animate-slide-up border-2 border-purple-200 shadow-lg">
-            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center mx-auto mb-6 shadow-2xl">
+          <div className="col-span-full bg-gradient-to-br from-wine-50 via-indigo-50 to-wine-100 rounded-2xl text-center py-20 animate-slide-up border-2 border-wine-200 shadow-lg">
+            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-wine-500 to-indigo-600 flex items-center justify-center mx-auto mb-6 shadow-2xl">
               <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
               </svg>
@@ -447,9 +448,9 @@ export function MediaLibrary() {
       {/* Modal de Recusa */}
       {showRejectModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl animate-slide-up border-2 border-red-200">
+          <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl animate-slide-up border-2 border-wine-200">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-wine-500 to-rose-600 flex items-center justify-center shadow-lg">
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
@@ -471,7 +472,7 @@ export function MediaLibrary() {
                 value={rejectionNote[showRejectModal] || ''}
                 onChange={(e) => setRejectionNote({ ...rejectionNote, [showRejectModal]: e.target.value })}
                 placeholder="Ex: As cores não condizem com nossa identidade visual..."
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 font-outer-sans text-sm"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-wine-500 focus:border-wine-500 font-outer-sans text-sm"
                 rows={4}
               />
             </div>
@@ -489,7 +490,7 @@ export function MediaLibrary() {
               </button>
               <button
                 onClick={() => confirmReject(showRejectModal)}
-                className="flex-1 px-5 py-3 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-xl font-bold font-outer-sans transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50"
+                className="flex-1 px-5 py-3 bg-gradient-to-r from-wine-500 to-rose-600 hover:from-wine-600 hover:to-rose-700 text-white rounded-xl font-bold font-outer-sans transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50"
                 disabled={rejectMutation.isPending}
               >
                 {rejectMutation.isPending ? (

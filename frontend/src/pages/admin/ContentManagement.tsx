@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/client';
 import { fixImageUrl } from '../../utils/helpers';
+import { useDialog } from '../../components/ConfirmDialog';
 
 interface Media {
   id: string;
@@ -60,13 +61,13 @@ const DownloadIcon = () => (
 );
 
 const ImageIcon = () => (
-  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg className="w-5 h-5 text-wine-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
   </svg>
 );
 
 const VideoIcon = () => (
-  <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg className="w-5 h-5 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
   </svg>
 );
@@ -103,6 +104,7 @@ const getTypeIcon = (type: string) => {
 };
 
 export function ContentManagement() {
+  const { confirm, alert } = useDialog();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     tenantId: '',
@@ -168,20 +170,19 @@ export function ContentManagement() {
     },
   });
 
-  const handleDelete = (mediaId: string, title: string) => {
-    if (window.confirm(`Tem certeza que deseja excluir o conteúdo "${title}"?`)) {
-      deleteMutation.mutate(mediaId);
-    }
+  const handleDelete = async (mediaId: string, title: string) => {
+    const ok = await confirm({ title: 'Excluir conteúdo', message: `Tem certeza que deseja excluir o conteúdo "${title}"?`, confirmText: 'Excluir' });
+    if (ok) deleteMutation.mutate(mediaId);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.file) {
-      alert('Selecione um arquivo');
+      await alert({ title: 'Arquivo obrigatório', message: 'Selecione um arquivo', type: 'warning' });
       return;
     }
     if (!formData.tenantId) {
-      alert('Selecione um cliente');
+      await alert({ title: 'Cliente obrigatório', message: 'Selecione um cliente', type: 'warning' });
       return;
     }
 
@@ -210,7 +211,7 @@ export function ContentManagement() {
     return (
       <div className="flex items-center justify-center min-h-[400px] animate-fade-in">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-wine-600 mb-4"></div>
           <p className="text-gray-600 font-outer-sans">Carregando conteúdos...</p>
         </div>
       </div>
@@ -221,7 +222,7 @@ export function ContentManagement() {
     <div className="px-4 py-6 sm:px-0 animate-fade-in">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-orange-500 bg-clip-text text-transparent mb-1 md:mb-2 font-outer-sans leading-tight">
+          <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-wine-600 to-gold-500 bg-clip-text text-transparent mb-1 md:mb-2 font-outer-sans leading-tight">
             Gestão de Conteúdos
           </h1>
           <p className="text-gray-600 font-outer-sans">Upload e gestão de mídias e materiais de marketing para clientes</p>
@@ -363,7 +364,7 @@ export function ContentManagement() {
             </div>
           </form>
           {uploadMutation.isError && (
-            <div className="mt-4 text-red-600 font-outer-sans">
+            <div className="mt-4 text-wine-600 font-outer-sans">
               Erro ao fazer upload. Tente novamente.
             </div>
           )}
@@ -430,7 +431,7 @@ export function ContentManagement() {
                 </>
               ) : (
                 <div className="flex items-start gap-3 mb-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-100 to-orange-100 flex items-center justify-center flex-shrink-0 shadow-md border border-purple-200">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-wine-100 to-gold-100 flex items-center justify-center flex-shrink-0 shadow-md border border-wine-200">
                     {getTypeIcon(item.type)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -444,13 +445,13 @@ export function ContentManagement() {
               
               {/* Informação da Empresa */}
               {item.tenant?.clients?.businessName && (
-                <div className="mb-3 p-2.5 bg-gradient-to-r from-purple-50 to-orange-50 rounded-lg border border-purple-200 flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                <div className="mb-3 p-2.5 bg-gradient-to-r from-wine-50 to-gold-50 rounded-lg border border-wine-200 flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-wine-500 to-wine-600 flex items-center justify-center flex-shrink-0">
                     <BuildingIcon />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-600 font-outer-sans mb-0.5">Enviado para:</p>
-                    <p className="text-sm font-semibold text-purple-700 font-outer-sans truncate">
+                    <p className="text-sm font-semibold text-wine-700 font-outer-sans truncate">
                       {item.tenant.clients.businessName}
                     </p>
                   </div>
@@ -459,7 +460,7 @@ export function ContentManagement() {
               
               <div className="flex items-center gap-2 mb-4">
                 {item.category && (
-                  <span className="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-semibold font-outer-sans border border-purple-200">
+                  <span className="px-2.5 py-1 bg-wine-50 text-wine-700 rounded-full text-xs font-semibold font-outer-sans border border-wine-200">
                     {item.category}
                   </span>
                 )}
@@ -550,7 +551,7 @@ export function ContentManagement() {
         })}
         {(!media?.items || media.items.length === 0) && (
           <div className="card-gradient text-center py-16 col-span-3 animate-slide-up">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-100 to-wine-100 flex items-center justify-center mx-auto mb-4">
               <FolderIcon />
             </div>
             <p className="text-gray-600 mb-2 text-lg font-medium font-outer-sans">

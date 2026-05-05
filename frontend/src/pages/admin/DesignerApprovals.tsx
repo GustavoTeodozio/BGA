@@ -23,13 +23,13 @@ const ClockIcon = () => (
 );
 
 const ImageIcon = () => (
-  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg className="w-6 h-6 text-wine-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
   </svg>
 );
 
 const VideoIcon = () => (
-  <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg className="w-6 h-6 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
   </svg>
 );
@@ -119,7 +119,7 @@ export function DesignerApprovals() {
         );
       case 'REJECTED':
         return (
-          <span className="px-3 py-1.5 bg-red-50 text-red-700 rounded-full text-xs font-semibold font-outer-sans border border-red-200 flex items-center gap-1">
+          <span className="px-3 py-1.5 bg-wine-50 text-wine-700 rounded-full text-xs font-semibold font-outer-sans border border-wine-200 flex items-center gap-1">
             <XIcon />
             Recusado
           </span>
@@ -141,7 +141,7 @@ export function DesignerApprovals() {
     <div className="p-6 animate-fade-in">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-orange-500 bg-clip-text text-transparent mb-1 md:mb-2 font-outer-sans leading-tight">
+        <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-wine-600 to-gold-500 bg-clip-text text-transparent mb-1 md:mb-2 font-outer-sans leading-tight">
           Designer - Aprovações
         </h1>
         <p className="text-gray-600 font-outer-sans">
@@ -193,7 +193,7 @@ export function DesignerApprovals() {
           onClick={() => setActiveTab('rejected')}
           className={`px-6 py-3 rounded-xl font-semibold font-outer-sans transition-all duration-200 ${
             activeTab === 'rejected'
-              ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30'
+              ? 'bg-gradient-to-r from-wine-500 to-wine-600 text-white shadow-lg shadow-wine-500/30'
               : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
           }`}
         >
@@ -201,7 +201,7 @@ export function DesignerApprovals() {
             <XIcon />
             <span>Recusados</span>
             {rejectedData?.total > 0 && (
-              <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded-full text-xs">
+              <span className="px-2 py-0.5 bg-wine-100 text-wine-800 rounded-full text-xs">
                 {rejectedData.total}
               </span>
             )}
@@ -213,7 +213,7 @@ export function DesignerApprovals() {
       {isLoading() ? (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-wine-600 mb-4"></div>
             <p className="text-gray-600 font-outer-sans">Carregando...</p>
           </div>
         </div>
@@ -252,7 +252,7 @@ export function DesignerApprovals() {
                     />
                   </div>
                 ) : (
-                  <div className="mb-4 flex items-center justify-center h-48 rounded-lg bg-gradient-to-br from-purple-100 to-orange-100">
+                  <div className="mb-4 flex items-center justify-center h-48 rounded-lg bg-gradient-to-br from-wine-100 to-gold-100">
                     {getTypeIcon(media.type)}
                   </div>
                 )}
@@ -270,8 +270,8 @@ export function DesignerApprovals() {
                 </div>
 
                 {/* Client Info */}
-                <div className="mb-4 p-3 bg-purple-50 rounded-lg border border-purple-100">
-                  <p className="text-xs text-purple-600 font-semibold font-outer-sans mb-1">
+                <div className="mb-4 p-3 bg-wine-50 rounded-lg border border-wine-100">
+                  <p className="text-xs text-wine-600 font-semibold font-outer-sans mb-1">
                     Cliente
                   </p>
                   <p className="text-sm text-gray-800 font-outer-sans font-medium">
@@ -283,7 +283,7 @@ export function DesignerApprovals() {
                 <div className="flex items-center gap-2 mb-4 flex-wrap">
                   {getStatusBadge(media.approvalStatus)}
                   {media.category && (
-                    <span className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-xs font-semibold font-outer-sans border border-purple-200">
+                    <span className="px-3 py-1.5 bg-wine-50 text-wine-700 rounded-full text-xs font-semibold font-outer-sans border border-wine-200">
                       {media.category}
                     </span>
                   )}
@@ -294,8 +294,8 @@ export function DesignerApprovals() {
 
                 {/* Rejection Note */}
                 {media.rejectionNote && (
-                  <div className="mb-4 p-3 bg-red-50 rounded-lg border border-red-100">
-                    <p className="text-xs text-red-600 font-semibold font-outer-sans mb-1">
+                  <div className="mb-4 p-3 bg-wine-50 rounded-lg border border-wine-100">
+                    <p className="text-xs text-wine-600 font-semibold font-outer-sans mb-1">
                       Motivo da Recusa
                     </p>
                     <p className="text-sm text-gray-700 font-outer-sans">
@@ -327,7 +327,7 @@ export function DesignerApprovals() {
 
           {(!currentData?.items || currentData.items.length === 0) && (
             <div className="col-span-full card-gradient text-center py-16">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-100 to-orange-100 flex items-center justify-center mx-auto mb-4">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-wine-100 to-gold-100 flex items-center justify-center mx-auto mb-4">
                 {activeTab === 'pending' && <ClockIcon />}
                 {activeTab === 'approved' && <CheckIcon />}
                 {activeTab === 'rejected' && <XIcon />}

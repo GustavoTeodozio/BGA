@@ -7,6 +7,7 @@ export interface ListTasksParams extends PaginationParams {
   category?: string;
   assigneeId?: string;
   priority?: string;
+  includeLinked?: boolean;
 }
 
 export interface CreateTaskInput {
@@ -38,13 +39,17 @@ export interface UpdateTaskInput {
   publishedAt?: Date;
   tags?: string;
   position?: number;
+  clientTenantId?: string | null;
 }
 
 export class TaskService {
   async listTasks(tenantId: string, params: ListTasksParams) {
     const { take, skip } = buildPagination(params);
 
-    const where: any = { tenantId };
+    const baseWhere: any = params.includeLinked
+      ? { OR: [{ tenantId }, { clientTenantId: tenantId }] }
+      : { tenantId };
+    const where: any = { ...baseWhere };
     if (params.status) where.status = params.status;
     if (params.category) where.category = params.category;
     if (params.assigneeId) where.assigneeId = params.assigneeId;
@@ -242,6 +247,7 @@ export class TaskService {
         publishedAt: input.publishedAt,
         tags: input.tags,
         position: input.position,
+        ...(input.clientTenantId !== undefined && { clientTenantId: input.clientTenantId }),
       },
       include: {
         assignee: {

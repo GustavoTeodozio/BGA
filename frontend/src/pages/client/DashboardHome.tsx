@@ -1,285 +1,300 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import api from '../../api/client';
-import { useToast } from '../../hooks/useToast';
-import { Toast } from '../../components/Toast';
+import { useAuthStore } from '../../store/auth.store';
+import type { Task, TaskStatus } from '../../types/task';
 
-// Ícones SVG minimalistas
-const LeadsIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-  </svg>
-);
+type OppStage = 'LEAD_NOVO' | 'CONTATO_FEITO' | 'PROPOSTA_ENVIADA' | 'NEGOCIACAO' | 'FECHAMENTO' | 'GANHO' | 'PERDIDO';
+interface LinkedOpportunity {
+  id: string; title: string; clientName: string;
+  value: number; stage: OppStage; updatedAt: string;
+}
 
-const SalesIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
+const OPP_STAGE_LABEL: Record<OppStage, { label: string; color: string; bg: string }> = {
+  LEAD_NOVO:        { label: 'Lead',            color: 'text-slate-600',  bg: 'bg-slate-100' },
+  CONTATO_FEITO:    { label: 'Contato',         color: 'text-blue-600',   bg: 'bg-blue-100' },
+  PROPOSTA_ENVIADA: { label: 'Proposta',        color: 'text-violet-600', bg: 'bg-violet-100' },
+  NEGOCIACAO:       { label: 'Negociação',      color: 'text-amber-600',  bg: 'bg-amber-100' },
+  FECHAMENTO:       { label: 'Fechamento',      color: 'text-orange-600', bg: 'bg-orange-100' },
+  GANHO:            { label: 'Ganho',           color: 'text-green-600',  bg: 'bg-green-100' },
+  PERDIDO:          { label: 'Perdido',         color: 'text-red-600',    bg: 'bg-red-100' },
+};
 
-const ChartIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-  </svg>
-);
-
-const GrowthIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-  </svg>
-);
+const STAGE_MAP: Record<TaskStatus, { label: string; color: string; bg: string }> = {
+  BACKLOG:      { label: 'Solicitado',   color: 'text-gray-600',   bg: 'bg-gray-100' },
+  IN_PRODUCTION:{ label: 'Em Produção',  color: 'text-blue-600',   bg: 'bg-blue-100' },
+  FOR_APPROVAL: { label: 'Aprovação',    color: 'text-amber-600',  bg: 'bg-amber-100' },
+  SCHEDULED:    { label: 'Montagem',     color: 'text-purple-600', bg: 'bg-purple-100' },
+  PUBLISHED:    { label: 'Concluído',    color: 'text-green-600',  bg: 'bg-green-100' },
+};
 
 export function DashboardHome() {
-  const queryClient = useQueryClient();
-  const [syncingFacebook, setSyncingFacebook] = useState(false);
-  const toast = useToast();
+  const { user } = useAuthStore();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['dashboard'],
+  const { data: tasksData, isLoading } = useQuery({
+    queryKey: ['client', 'tasks'],
     queryFn: async () => {
-      const response = await api.get('/client/dashboard/summary');
-      return response.data;
+      const r = await api.get('/client/tasks?perPage=100');
+      return r.data;
     },
   });
 
-  const { data: campaignsData } = useQuery({
-    queryKey: ['campaigns'],
+  const { data: mediaData } = useQuery({
+    queryKey: ['client', 'media'],
     queryFn: async () => {
-      const response = await api.get('/admin/campaigns');
-      return response.data;
+      const r = await api.get('/client/media');
+      return r.data;
     },
   });
 
-  const syncFacebookMutation = useMutation({
-    mutationFn: async () => {
-      const response = await api.post('/client/facebook/sync');
-      return response.data;
-    },
-    onSuccess: (data) => {
-      toast.success(`${data.total} campanhas sincronizadas com sucesso!`);
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
-      setSyncingFacebook(false);
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Erro ao sincronizar. Verifique se a API Key está configurada');
-      setSyncingFacebook(false);
+  const { data: linkedOpps = [] } = useQuery<LinkedOpportunity[]>({
+    queryKey: ['client', 'linked-opportunities'],
+    queryFn: async () => {
+      const r = await api.get('/client/linked-opportunities');
+      return r.data;
     },
   });
 
-  const handleSyncFacebook = () => {
-    setSyncingFacebook(true);
-    syncFacebookMutation.mutate();
+  const tasks: Task[] = tasksData?.items || [];
+
+  const grouped: Record<TaskStatus, number> = {
+    BACKLOG: 0, IN_PRODUCTION: 0, FOR_APPROVAL: 0, SCHEDULED: 0, PUBLISHED: 0,
   };
+  tasks.forEach((t) => { grouped[t.status] = (grouped[t.status] || 0) + 1; });
+
+  const pendingApprovals = tasks.filter((t) => t.status === 'FOR_APPROVAL');
+  const inProduction = tasks.filter((t) => t.status === 'IN_PRODUCTION');
+  const recentTasks = [...tasks]
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, 5);
+
+  const totalDone = grouped.PUBLISHED;
+  const totalTasks = tasks.length;
+  const progress = totalTasks > 0 ? Math.round((totalDone / totalTasks) * 100) : 0;
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px] animate-fade-in">
+      <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
-          <p className="text-gray-600 font-outer-sans">Carregando dashboard...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-wine-600 mb-4"></div>
+          <p className="text-gray-600 font-outer-sans">Carregando...</p>
         </div>
       </div>
     );
   }
 
-  const stats = [
-    {
-      label: 'Leads Recebidos',
-      value: data?.leadsReceived || 0,
-      icon: LeadsIcon,
-      gradient: 'from-blue-500 to-blue-600',
-      bgGradient: 'from-blue-50 to-blue-100',
-    },
-    {
-      label: 'Vendas Fechadas',
-      value: data?.salesClosed || 0,
-      icon: SalesIcon,
-      gradient: 'from-green-500 to-green-600',
-      bgGradient: 'from-green-50 to-green-100',
-    },
-    {
-      label: '% Fechamento',
-      value: `${data?.closeRate ? data.closeRate.toFixed(1) : 0}%`,
-      icon: ChartIcon,
-      gradient: 'from-purple-500 to-purple-600',
-      bgGradient: 'from-purple-50 to-purple-100',
-    },
-    {
-      label: 'Crescimento',
-      value: `${data?.growthPercent ? data.growthPercent.toFixed(1) : 0}%`,
-      icon: GrowthIcon,
-      gradient: 'from-orange-500 to-orange-600',
-      bgGradient: 'from-orange-50 to-orange-100',
-    },
-  ];
-
   return (
-    <div className="px-4 py-6 sm:px-0 animate-fade-in">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-orange-500 bg-clip-text text-transparent mb-2 font-outer-sans">
-            Dashboard
-          </h1>
-          <p className="text-gray-600 font-outer-sans">Visão geral do seu desempenho e métricas</p>
+    <div className="animate-fade-in space-y-6">
+      {/* Welcome */}
+      <div className="bg-gradient-to-r from-wine-600 via-wine-500 to-gold-500 rounded-2xl p-6 text-white shadow-xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-wine-100 text-sm font-outer-sans mb-1">Bem-vindo(a) de volta,</p>
+            <h1 className="text-2xl md:text-3xl font-black font-outer-sans mb-2">{user?.name || 'Cliente'}</h1>
+            <p className="text-wine-100 font-outer-sans text-sm">Acompanhe aqui o andamento do seu projeto.</p>
+          </div>
+          <div className="hidden sm:flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex-shrink-0">
+            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </svg>
+          </div>
         </div>
-        <button
-          onClick={handleSyncFacebook}
-          disabled={syncingFacebook || syncFacebookMutation.isPending}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-semibold font-outer-sans shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <svg className={`w-5 h-5 ${syncingFacebook ? 'animate-spin' : ''}`} fill="currentColor" viewBox="0 0 24 24">
-            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-          </svg>
-          {syncingFacebook ? 'Sincronizando...' : 'Sincronizar Facebook'}
-        </button>
+
+        {/* Progress bar */}
+        {totalTasks > 0 && (
+          <div className="mt-5">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-wine-100 text-xs font-outer-sans">Progresso do projeto</span>
+              <span className="text-white font-bold text-sm font-outer-sans">{progress}%</span>
+            </div>
+            <div className="w-full h-2.5 bg-white/20 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-white rounded-full transition-all duration-700"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-wine-100 text-xs mt-1.5 font-outer-sans">{totalDone} de {totalTasks} etapas concluídas</p>
+          </div>
+        )}
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        {(Object.keys(STAGE_MAP) as TaskStatus[]).map((status) => {
+          const s = STAGE_MAP[status];
           return (
-            <div
-              key={stat.label}
-              className="card-gradient animate-slide-up group hover:scale-105 transition-transform duration-300"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-lg`}>
-                  <Icon />
-                </div>
+            <div key={status} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-shadow">
+              <div className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold font-outer-sans mb-3 ${s.bg} ${s.color}`}>
+                {s.label}
               </div>
-              <h3 className="text-sm font-medium text-gray-600 mb-2 font-outer-sans">{stat.label}</h3>
-              <p className={`text-4xl font-bold bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent font-outer-sans`}>
-                {stat.value}
-              </p>
+              <p className="text-3xl font-black text-gray-800 font-outer-sans">{grouped[status]}</p>
+              <p className="text-xs text-gray-400 mt-0.5 font-outer-sans">{grouped[status] === 1 ? 'tarefa' : 'tarefas'}</p>
             </div>
           );
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card-gradient animate-slide-up">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
-              <ChartIcon />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 font-outer-sans">Evolução Mensal</h2>
-          </div>
-          <div className="h-64 flex items-center justify-center bg-gradient-to-br from-purple-50 to-orange-50 rounded-lg border border-purple-200">
-            <p className="text-gray-500 font-outer-sans">Gráfico de evolução será implementado aqui</p>
-          </div>
-        </div>
-        <div className="card-gradient animate-slide-up">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        {/* Pendente aprovação */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 font-outer-sans">Conteúdos Novos</h2>
-          </div>
-          <div className="space-y-4">
-            <div className="p-4 bg-gradient-to-r from-purple-50 to-orange-50 rounded-lg border border-purple-200">
-              <p className="text-sm text-gray-600 mb-1 font-outer-sans">Mídias</p>
-              <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-orange-500 bg-clip-text text-transparent font-outer-sans">
-                {data?.newContentSummary?.mediaAssets || 0} novos conteúdos este mês
-              </p>
-            </div>
-            <div className="p-4 bg-gradient-to-r from-orange-50 to-purple-50 rounded-lg border border-orange-200">
-              <p className="text-sm text-gray-600 mb-1 font-outer-sans">Aulas</p>
-              <p className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent font-outer-sans">
-                {data?.newContentSummary?.lessons || 0} novas aulas este mês
-              </p>
+            <div>
+              <h2 className="font-bold text-gray-800 font-outer-sans">Aguardando Aprovação</h2>
+              <p className="text-xs text-gray-400 font-outer-sans">{pendingApprovals.length} {pendingApprovals.length === 1 ? 'item' : 'itens'}</p>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Campanhas do Facebook */}
-      {campaignsData && campaignsData.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4 font-outer-sans flex items-center gap-2">
-            <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-            </svg>
-            Campanhas do Facebook
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {campaignsData.map((campaign: any, index: number) => (
-              <div
-                key={campaign.id}
-                className="card-gradient animate-slide-up group hover:scale-105 transition-transform duration-300"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="font-bold text-gray-800 text-lg mb-1 font-outer-sans">
-                      {campaign.name}
-                    </h3>
-                    {campaign.objective && (
-                      <p className="text-sm text-gray-600 font-outer-sans">
-                        {campaign.objective}
+          {pendingApprovals.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-gray-400 text-sm font-outer-sans">Nada pendente no momento</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {pendingApprovals.slice(0, 4).map((task) => (
+                <div key={task.id} className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                  <div className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0 animate-pulse" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate font-outer-sans">{task.title}</p>
+                    {task.dueDate && (
+                      <p className="text-xs text-amber-600 font-outer-sans mt-0.5">
+                        Prazo: {new Date(task.dueDate).toLocaleDateString('pt-BR')}
                       </p>
                     )}
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    campaign.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-                    campaign.status === 'PAUSED' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
-                    {campaign.status === 'ACTIVE' ? 'Ativa' :
-                     campaign.status === 'PAUSED' ? 'Pausada' :
-                     campaign.status === 'COMPLETED' ? 'Concluída' : 'Rascunho'}
+                </div>
+              ))}
+              {pendingApprovals.length > 4 && (
+                <p className="text-xs text-gray-400 text-center pt-1 font-outer-sans">+{pendingApprovals.length - 4} mais itens</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Em produção */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="font-bold text-gray-800 font-outer-sans">Em Produção</h2>
+              <p className="text-xs text-gray-400 font-outer-sans">{inProduction.length} {inProduction.length === 1 ? 'etapa' : 'etapas'} ativas</p>
+            </div>
+          </div>
+
+          {inProduction.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-400 text-sm font-outer-sans">Nenhuma etapa em produção</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {inProduction.slice(0, 4).map((task) => (
+                <div key={task.id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate font-outer-sans">{task.title}</p>
+                    {task.assigneeName && (
+                      <p className="text-xs text-blue-500 font-outer-sans mt-0.5">Resp.: {task.assigneeName}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Atividade recente */}
+      {recentTasks.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <h2 className="font-bold text-gray-800 font-outer-sans mb-4">Atividade Recente</h2>
+          <div className="space-y-3">
+            {recentTasks.map((task) => {
+              const s = STAGE_MAP[task.status];
+              return (
+                <div key={task.id} className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${s.bg.replace('bg-', 'bg-').replace('-100', '-400')}`} />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm text-gray-700 font-outer-sans font-medium truncate block">{task.title}</span>
+                  </div>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold font-outer-sans flex-shrink-0 ${s.bg} ${s.color}`}>
+                    {s.label}
+                  </span>
+                  <span className="text-xs text-gray-400 font-outer-sans flex-shrink-0 hidden sm:block">
+                    {new Date(task.updatedAt).toLocaleDateString('pt-BR')}
                   </span>
                 </div>
-
-                {campaign.dailyBudget && (
-                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                    <span className="text-sm text-green-700 font-semibold font-outer-sans">Orçamento Diário</span>
-                    <span className="text-lg font-bold text-green-600">
-                      R$ {parseFloat(campaign.dailyBudget).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                )}
-
-                {campaign.startDate && (
-                  <div className="mt-3 text-xs text-gray-500 font-outer-sans">
-                    Início: {new Date(campaign.startDate).toLocaleDateString('pt-BR')}
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Aviso se não houver API Key */}
-      {(!campaignsData || campaignsData.length === 0) && (
-        <div className="mt-8 card-gradient text-center py-8">
-          <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-gray-600 font-semibold font-outer-sans mb-2">
-            Configure a API Key do Facebook para ver suas campanhas
-          </p>
-          <p className="text-gray-500 text-sm font-outer-sans">
-            Entre em contato com o administrador para configurar a integração
-          </p>
+      {/* Oportunidades vinculadas pelo admin */}
+      {linkedOpps.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 rounded-xl bg-wine-100 flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-wine-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="font-bold text-gray-800 font-outer-sans">Acompanhamento Comercial</h2>
+              <p className="text-xs text-gray-400 font-outer-sans">{linkedOpps.length} {linkedOpps.length === 1 ? 'proposta' : 'propostas'} da BGA</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {linkedOpps.map((opp) => {
+              const s = OPP_STAGE_LABEL[opp.stage];
+              const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+              return (
+                <div key={opp.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate font-outer-sans">{opp.title}</p>
+                    <p className="text-xs text-gray-400 font-outer-sans mt-0.5">
+                      Atualizado em {new Date(opp.updatedAt).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {opp.value > 0 && (
+                      <span className="text-sm font-bold text-wine-600 font-outer-sans">{fmt(opp.value)}</span>
+                    )}
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold font-outer-sans ${s.bg} ${s.color}`}>
+                      {s.label}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* Toast Notifications */}
-      {toast.toasts.map((t) => (
-        <Toast
-          key={t.id}
-          message={t.message}
-          type={t.type}
-          onClose={() => toast.removeToast(t.id)}
-        />
-      ))}
+      {/* Empty state */}
+      {tasks.length === 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-wine-100 to-gold-100 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-wine-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <h3 className="font-bold text-gray-700 font-outer-sans mb-2">Seu projeto está sendo preparado</h3>
+          <p className="text-gray-400 text-sm font-outer-sans">Em breve as etapas do seu projeto aparecerão aqui.</p>
+        </div>
+      )}
     </div>
   );
 }
-

@@ -34,7 +34,7 @@ interface Lesson {
 
 // Ícones SVG minimalistas
 const BookIcon = () => (
-  <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg className="w-8 h-8 text-wine-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
   </svg>
 );
@@ -193,7 +193,7 @@ export function TrainingCenter() {
     return (
       <div className="flex items-center justify-center min-h-[400px] animate-fade-in">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-wine-600 mb-4"></div>
           <p className="text-gray-600 font-outer-sans">Carregando cursos...</p>
         </div>
       </div>
@@ -205,7 +205,7 @@ export function TrainingCenter() {
     return (
       <div className="flex items-center justify-center min-h-[400px] animate-fade-in">
         <div className="text-center">
-          <p className="text-red-600 font-outer-sans mb-2">Erro ao carregar cursos</p>
+          <p className="text-wine-600 font-outer-sans mb-2">Erro ao carregar cursos</p>
           <p className="text-gray-600 font-outer-sans text-sm">{error instanceof Error ? error.message : 'Erro desconhecido'}</p>
         </div>
       </div>
@@ -275,12 +275,12 @@ export function TrainingCenter() {
           {/* Conteúdo principal - Vídeo e informações */}
           <div className="lg:col-span-2 space-y-6">
             {/* Header do curso */}
-            <div className="bg-gradient-to-r from-purple-50 to-orange-50 rounded-xl p-6 border border-purple-100">
+            <div className="bg-gradient-to-r from-wine-50 to-gold-50 rounded-xl p-6 border border-wine-100">
               <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2 font-outer-sans">{selectedTrack.title}</h1>
               <div className="flex items-center gap-4 mb-4">
-                <p className="text-gray-600 font-outer-sans">Por <span className="font-semibold text-purple-600">Outset</span></p>
+                <p className="text-gray-600 font-outer-sans">Por <span className="font-semibold text-wine-600">BGA STANDS</span></p>
                 {selectedTrack.level && (
-                  <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold font-outer-sans">
+                  <span className="px-3 py-1 bg-wine-100 text-wine-700 rounded-full text-xs font-semibold font-outer-sans">
                     {selectedTrack.level}
                   </span>
                 )}
@@ -294,7 +294,7 @@ export function TrainingCenter() {
             {selectedLesson && (selectedLesson.videoUrl || (selectedLesson.resourceUrl && isVideoUrl(selectedLesson.resourceUrl))) && (
               <div className="bg-white rounded-xl shadow-lg overflow-hidden">
                 {/* Header da aula */}
-                <div className="bg-gradient-to-r from-purple-600 to-orange-500 p-4">
+                <div className="bg-gradient-to-r from-wine-600 to-gold-500 p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <h2 className="text-xl font-bold text-white mb-1 font-outer-sans">{selectedLesson.title}</h2>
@@ -357,7 +357,7 @@ export function TrainingCenter() {
                     {selectedLesson.resourceUrl && !isVideoUrl(selectedLesson.resourceUrl) && (
                       <a
                         href={selectedLesson.resourceUrl}
-                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-orange-500 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-orange-600 transition-all font-outer-sans flex items-center gap-2"
+                        className="px-4 py-2 bg-gradient-to-r from-wine-600 to-gold-500 text-white rounded-lg font-semibold hover:from-wine-700 hover:to-gold-600 transition-all font-outer-sans flex items-center gap-2"
                       >
                         <LinkIcon />
                         <span>
@@ -373,7 +373,7 @@ export function TrainingCenter() {
                       disabled={!nextLesson}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all font-outer-sans ${
                         nextLesson
-                          ? 'bg-gradient-to-r from-purple-600 to-orange-500 text-white hover:from-purple-700 hover:to-orange-600'
+                          ? 'bg-gradient-to-r from-wine-600 to-gold-500 text-white hover:from-wine-700 hover:to-gold-600'
                           : 'bg-gray-50 text-gray-400 cursor-not-allowed'
                       }`}
                     >
@@ -388,7 +388,7 @@ export function TrainingCenter() {
             {/* Mensagem se não houver aula selecionada */}
             {!selectedLesson && (
               <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-100 to-orange-100 flex items-center justify-center mx-auto mb-4">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-wine-100 to-gold-100 flex items-center justify-center mx-auto mb-4">
                   <PlayIcon />
                 </div>
                 <p className="text-gray-600 font-outer-sans text-lg">Selecione uma aula para começar</p>
@@ -406,11 +406,11 @@ export function TrainingCenter() {
               <div className="space-y-4">
                 {selectedTrack.modules.length > 0 ? (
                   selectedTrack.modules.map((module: TrainingModule, moduleIndex: number) => (
-                    <div key={module.id} className="border border-gray-200 rounded-xl overflow-hidden hover:border-purple-300 hover:shadow-md transition-all">
+                    <div key={module.id} className="border border-gray-200 rounded-xl overflow-hidden hover:border-wine-300 hover:shadow-md transition-all">
                       {/* Header do módulo */}
-                      <div className="bg-gradient-to-r from-orange-50 to-purple-50 p-4 border-b border-gray-200">
+                      <div className="bg-gradient-to-r from-gold-50 to-wine-50 p-4 border-b border-gray-200">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center flex-shrink-0 shadow-md">
                             <span className="text-white text-sm font-bold font-outer-sans">{moduleIndex + 1}</span>
                           </div>
                           <div className="flex-1 min-w-0">
@@ -433,15 +433,15 @@ export function TrainingCenter() {
                                 onClick={() => handleLessonClick(lesson)}
                                 className={`w-full text-left p-3 rounded-lg transition-all group ${
                                   isActive
-                                    ? 'bg-gradient-to-r from-purple-100 to-orange-100 border-2 border-purple-400 shadow-sm'
-                                    : 'hover:bg-purple-50 border border-transparent hover:border-purple-200'
+                                    ? 'bg-gradient-to-r from-wine-100 to-gold-100 border-2 border-wine-400 shadow-sm'
+                                    : 'hover:bg-wine-50 border border-transparent hover:border-wine-200'
                                 }`}
                               >
                                 <div className="flex items-center gap-3">
                                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${
                                     isActive
-                                      ? 'bg-gradient-to-br from-purple-500 to-orange-500 text-white shadow-md scale-110'
-                                      : 'bg-gradient-to-br from-purple-100 to-orange-100 text-gray-700 group-hover:scale-105'
+                                      ? 'bg-gradient-to-br from-wine-500 to-gold-500 text-white shadow-md scale-110'
+                                      : 'bg-gradient-to-br from-wine-100 to-gold-100 text-gray-700 group-hover:scale-105'
                                   }`}>
                                     {isActive ? (
                                       <PlayIcon />
@@ -455,7 +455,7 @@ export function TrainingCenter() {
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className={`text-sm font-semibold font-outer-sans truncate ${
-                                      isActive ? 'text-purple-700' : 'text-gray-800'
+                                      isActive ? 'text-wine-700' : 'text-gray-800'
                                     }`}>
                                       {lesson.title}
                                     </p>
@@ -464,7 +464,7 @@ export function TrainingCenter() {
                                         <p className="text-xs text-gray-500 font-outer-sans">{formatDuration(lesson.duration)}</p>
                                       )}
                                       {isActive && (
-                                        <span className="text-xs text-purple-600 font-semibold font-outer-sans">• Assistindo</span>
+                                        <span className="text-xs text-wine-600 font-semibold font-outer-sans">• Assistindo</span>
                                       )}
                                     </div>
                                   </div>
@@ -493,7 +493,7 @@ export function TrainingCenter() {
     <div className="px-4 py-6 sm:px-0 animate-fade-in">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-orange-500 bg-clip-text text-transparent mb-2 font-outer-sans">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-wine-600 to-gold-500 bg-clip-text text-transparent mb-2 font-outer-sans">
           Centro de Treinamento
         </h1>
         <p className="text-gray-600 font-outer-sans">Acesse seus cursos e aulas disponíveis</p>
@@ -505,8 +505,8 @@ export function TrainingCenter() {
           onClick={() => setSelectedLevel('all')}
           className={`px-5 py-2.5 rounded-xl font-semibold font-outer-sans transition-all duration-300 flex items-center gap-2 ${
             selectedLevel === 'all'
-              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30 scale-105'
-              : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-purple-300 hover:shadow-md hover:scale-105'
+              ? 'bg-gradient-to-r from-wine-600 to-indigo-600 text-white shadow-lg shadow-wine-500/30 scale-105'
+              : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-wine-300 hover:shadow-md hover:scale-105'
           }`}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -562,8 +562,8 @@ export function TrainingCenter() {
           onClick={() => setSelectedLevel('avançado')}
           className={`px-5 py-2.5 rounded-xl font-semibold font-outer-sans transition-all duration-300 flex items-center gap-2 ${
             selectedLevel === 'avançado'
-              ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg shadow-orange-500/30 scale-105'
-              : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-orange-300 hover:shadow-md hover:scale-105'
+              ? 'bg-gradient-to-r from-gold-500 to-wine-600 text-white shadow-lg shadow-gold-500/30 scale-105'
+              : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-gold-300 hover:shadow-md hover:scale-105'
           }`}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -603,7 +603,7 @@ export function TrainingCenter() {
                           const parent = target.parentElement;
                           if (parent && !parent.querySelector('.fallback-gradient')) {
                             const fallback = document.createElement('div');
-                            fallback.className = 'fallback-gradient absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-orange-500';
+                            fallback.className = 'fallback-gradient absolute inset-0 bg-gradient-to-br from-wine-600 via-wine-700 to-gold-500';
                             parent.appendChild(fallback);
                           }
                         }}
@@ -633,7 +633,7 @@ export function TrainingCenter() {
                                       const parent = target.parentElement;
                                       if (parent && !parent.querySelector('.fallback-gradient')) {
                                         const fallback = document.createElement('div');
-                                        fallback.className = 'fallback-gradient absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-orange-500';
+                                        fallback.className = 'fallback-gradient absolute inset-0 bg-gradient-to-br from-wine-600 via-wine-700 to-gold-500';
                                         parent.appendChild(fallback);
                                       }
                                     }}
@@ -663,7 +663,7 @@ export function TrainingCenter() {
                   ) : (
                     // Fallback final: gradiente
                     <>
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-orange-500"></div>
+                      <div className="absolute inset-0 bg-gradient-to-br from-wine-600 via-wine-700 to-gold-500"></div>
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
                     </>
                   )}
@@ -704,7 +704,7 @@ export function TrainingCenter() {
             ))
           ) : (
             <div className="card-gradient text-center py-16 animate-slide-up">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-100 to-orange-100 flex items-center justify-center mx-auto mb-4">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-wine-100 to-gold-100 flex items-center justify-center mx-auto mb-4">
                 <BookIcon />
               </div>
               <p className="text-gray-600 mb-2 text-lg font-medium font-outer-sans">
@@ -786,7 +786,7 @@ export function TrainingCenter() {
 
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="flex items-center gap-2 text-sm text-gray-600 font-outer-sans">
-                  <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">
+                  <span className="px-2 py-1 bg-wine-100 text-wine-700 rounded text-xs font-semibold">
                     {selectedLesson.type}
                   </span>
                   {selectedLesson.duration && (

@@ -1,7 +1,8 @@
 import { config as loadEnv } from 'dotenv';
 import { z } from 'zod';
 
-loadEnv();
+// override: true garante que o .env sobrescreve qualquer variável já definida no sistema
+loadEnv({ override: true });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -27,6 +28,8 @@ const envSchema = z.object({
     .min(6)
     .optional()
     .or(z.literal('').transform(() => undefined)),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
 });
 
 const env = envSchema.parse(process.env);

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/client';
 import { fixImageUrl } from '../../utils/helpers';
+import { useDialog } from '../../components/ConfirmDialog';
 
 interface TrainingTrack {
   id: string;
@@ -99,6 +100,7 @@ const SpinnerIcon = () => (
 );
 
 export function TrainingManagement() {
+  const { confirm, alert } = useDialog();
   const [expandedTracks, setExpandedTracks] = useState<Set<string>>(new Set());
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const [showTrackForm, setShowTrackForm] = useState(false);
@@ -300,12 +302,12 @@ export function TrainingManagement() {
     createModuleMutation.mutate(moduleForm);
   };
 
-  const handleCreateLesson = (e: React.FormEvent) => {
+  const handleCreateLesson = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validar se é VIDEO e não tem videoUrl
     if (lessonForm.type === 'VIDEO' && !lessonForm.videoUrl) {
-      alert('URL do vídeo é obrigatória quando o tipo é VIDEO');
+      await alert({ title: 'Campo obrigatório', message: 'URL do vídeo é obrigatória quando o tipo é VIDEO', type: 'warning' });
       return;
     }
     
@@ -330,7 +332,7 @@ export function TrainingManagement() {
     return (
       <div className="flex items-center justify-center min-h-[400px] animate-fade-in">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-wine-600 mb-4"></div>
           <p className="text-gray-600 font-outer-sans">Carregando treinamentos...</p>
         </div>
       </div>
@@ -341,7 +343,7 @@ export function TrainingManagement() {
     <div className="px-4 py-6 sm:px-0 animate-fade-in">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-orange-500 bg-clip-text text-transparent mb-1 md:mb-2 font-outer-sans leading-tight">
+          <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-wine-600 to-gold-500 bg-clip-text text-transparent mb-1 md:mb-2 font-outer-sans leading-tight">
             Gestão de Treinamentos
           </h1>
           <p className="text-gray-600 font-outer-sans">Crie e gerencie cursos e aulas globais para todos os clientes</p>
@@ -359,7 +361,7 @@ export function TrainingManagement() {
       {showTrackForm && (
         <div className="card-gradient mb-6 animate-slide-up">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-wine-500 to-wine-600 flex items-center justify-center shadow-lg">
               <BookIcon />
             </div>
             <h2 className="text-2xl font-bold text-gray-800 font-outer-sans">Criar Nova Trilha de Treinamento</h2>
@@ -436,7 +438,7 @@ export function TrainingManagement() {
                   type="checkbox"
                   checked={trackForm.isPublished}
                   onChange={(e) => setTrackForm({ ...trackForm, isPublished: e.target.checked })}
-                  className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                  className="w-4 h-4 text-wine-600 rounded focus:ring-wine-500"
                 />
                 <label className="text-sm font-medium font-outer-sans">Publicado</label>
               </div>
@@ -486,14 +488,14 @@ export function TrainingManagement() {
                         const parent = target.parentElement;
                         if (parent && !parent.querySelector('.fallback-icon')) {
                           const fallback = document.createElement('div');
-                          fallback.className = 'fallback-icon w-16 h-16 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center';
+                          fallback.className = 'fallback-icon w-16 h-16 rounded-lg bg-gradient-to-br from-wine-500 to-wine-600 flex items-center justify-center';
                           fallback.innerHTML = '<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>';
                           parent.appendChild(fallback);
                         }
                       }}
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-wine-500 to-wine-600 flex items-center justify-center">
                       <BookIcon />
                     </div>
                   )}
@@ -503,7 +505,7 @@ export function TrainingManagement() {
                       <p className="text-sm text-gray-500 font-outer-sans">{track.description}</p>
                     )}
                     {track.level && (
-                      <span className="text-xs text-purple-600 font-semibold font-outer-sans mt-1 inline-block">
+                      <span className="text-xs text-wine-600 font-semibold font-outer-sans mt-1 inline-block">
                         {track.level}
                       </span>
                     )}
@@ -518,8 +520,9 @@ export function TrainingManagement() {
                     {track.isPublished ? 'Publicado' : 'Rascunho'}
                   </span>
                   <button
-                    onClick={() => {
-                      if (confirm('Tem certeza que deseja excluir esta trilha? Todos os clientes perderão acesso a este curso.')) {
+                    onClick={async () => {
+                      const ok = await confirm({ title: 'Excluir trilha', message: 'Tem certeza que deseja excluir esta trilha? Todos os clientes perderão acesso a este curso.', confirmText: 'Excluir' });
+                      if (ok) {
                         deleteTrackMutation.mutate(track.id);
                       }
                     }}
@@ -544,9 +547,9 @@ export function TrainingManagement() {
 
               {/* Módulos */}
               {expandedTracks.has(track.id) && (
-                <div className="mt-4 ml-8 space-y-3 border-l-2 border-purple-200 pl-4">
+                <div className="mt-4 ml-8 space-y-3 border-l-2 border-wine-200 pl-4">
                   {track.modules.map((module: TrainingModule) => (
-                    <div key={module.id} className="bg-purple-50 rounded-lg p-4">
+                    <div key={module.id} className="bg-wine-50 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 flex-1">
                           <button
@@ -555,7 +558,7 @@ export function TrainingManagement() {
                           >
                             {expandedModules.has(module.id) ? <ChevronDownIcon /> : <ChevronRightIcon />}
                           </button>
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center">
                             <span className="text-white text-xs font-bold font-outer-sans">M</span>
                           </div>
                           <div className="flex-1">
@@ -565,10 +568,9 @@ export function TrainingManagement() {
                             )}
                           </div>
                           <button
-                            onClick={() => {
-                              if (confirm('Tem certeza que deseja excluir este módulo?')) {
-                                deleteModuleMutation.mutate(module.id);
-                              }
+                            onClick={async () => {
+                              const ok = await confirm({ title: 'Excluir módulo', message: 'Tem certeza que deseja excluir este módulo?', confirmText: 'Excluir' });
+                              if (ok) deleteModuleMutation.mutate(module.id);
                             }}
                             disabled={deleteModuleMutation.isPending}
                             className="btn btn-danger text-sm flex items-center gap-1.5 font-outer-sans"
@@ -614,7 +616,7 @@ export function TrainingManagement() {
                                       <p className="text-xs text-gray-500 font-outer-sans">{lesson.description}</p>
                                     )}
                                     <div className="flex gap-2 mt-1 flex-wrap">
-                                      <span className="text-xs text-purple-600 font-semibold font-outer-sans">
+                                      <span className="text-xs text-wine-600 font-semibold font-outer-sans">
                                         {lesson.type}
                                       </span>
                                       {lesson.duration && (
@@ -641,8 +643,9 @@ export function TrainingManagement() {
                                     </button>
                                   )}
                                   <button
-                                    onClick={() => {
-                                      if (confirm('Tem certeza que deseja excluir esta aula?')) {
+                                    onClick={async () => {
+                                      const ok = await confirm({ title: 'Excluir aula', message: 'Tem certeza que deseja excluir esta aula?', confirmText: 'Excluir' });
+                                      if (ok) {
                                         deleteLessonMutation.mutate(lesson.id);
                                       }
                                     }}
@@ -665,7 +668,7 @@ export function TrainingManagement() {
           ))
         ) : (
           <div className="card-gradient text-center py-16 animate-slide-up">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-100 to-orange-100 flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-wine-100 to-gold-100 flex items-center justify-center mx-auto mb-4">
               <BookIcon />
             </div>
             <p className="text-gray-600 mb-2 text-lg font-medium font-outer-sans">
@@ -732,10 +735,10 @@ export function TrainingManagement() {
 
             {/* Footer */}
             <div className="px-5 py-3 bg-gray-50 flex items-center gap-4 text-sm text-gray-600 font-outer-sans">
-              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-semibold">{viewingLesson.type}</span>
+              <span className="px-2 py-0.5 bg-wine-100 text-wine-700 rounded font-semibold">{viewingLesson.type}</span>
               {viewingLesson.duration && <span>{Math.floor(viewingLesson.duration / 60)} minutos</span>}
               {viewingLesson.resourceUrl && (
-                <a href={viewingLesson.resourceUrl} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
+                <a href={viewingLesson.resourceUrl} target="_blank" rel="noopener noreferrer" className="text-wine-600 hover:underline">
                   Material complementar →
                 </a>
               )}
@@ -747,7 +750,7 @@ export function TrainingManagement() {
       {/* Modal Criar Módulo */}
       {showModuleForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 border border-purple-200 animate-scale-in">
+          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 border border-wine-200 animate-scale-in">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 font-outer-sans">Criar Módulo</h2>
             <form onSubmit={handleCreateModule} className="space-y-4">
               <div>
@@ -795,7 +798,7 @@ export function TrainingManagement() {
       {/* Modal Criar Aula */}
       {showLessonForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 border border-purple-200 animate-scale-in max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 border border-wine-200 animate-scale-in max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 font-outer-sans">Criar Aula</h2>
             <form onSubmit={handleCreateLesson} className="space-y-4">
               <div>
@@ -839,7 +842,7 @@ export function TrainingManagement() {
                 <>
                   <div>
                     <label className="block text-sm font-medium mb-1 font-outer-sans">
-                      URL do Vídeo (YouTube/Vimeo) <span className="text-red-500">*</span>
+                      URL do Vídeo (YouTube/Vimeo) <span className="text-wine-500">*</span>
                     </label>
                     <input
                       type="url"
@@ -850,7 +853,7 @@ export function TrainingManagement() {
                       required
                     />
                     <p className="text-xs text-gray-500 mt-1 font-outer-sans">
-                      <span className="text-red-500 font-semibold">Obrigatório:</span> Cole a URL completa do YouTube ou Vimeo. O vídeo será exibido diretamente da plataforma.
+                      <span className="text-wine-500 font-semibold">Obrigatório:</span> Cole a URL completa do YouTube ou Vimeo. O vídeo será exibido diretamente da plataforma.
                     </p>
                   </div>
                   <div>
@@ -860,7 +863,7 @@ export function TrainingManagement() {
                         type="checkbox"
                         checked={lessonForm.useAutoThumbnail}
                         onChange={(e) => setLessonForm({ ...lessonForm, useAutoThumbnail: e.target.checked })}
-                        className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                        className="w-4 h-4 text-wine-600 rounded focus:ring-wine-500"
                       />
                       <label className="text-sm font-medium ml-2 font-outer-sans">
                         Gerar automaticamente (YouTube/Vimeo)
@@ -916,7 +919,7 @@ export function TrainingManagement() {
                   type="checkbox"
                   checked={lessonForm.isPublished}
                   onChange={(e) => setLessonForm({ ...lessonForm, isPublished: e.target.checked })}
-                  className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                  className="w-4 h-4 text-wine-600 rounded focus:ring-wine-500"
                 />
                 <label className="text-sm font-medium font-outer-sans">Publicado</label>
               </div>

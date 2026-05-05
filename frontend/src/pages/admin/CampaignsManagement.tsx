@@ -146,7 +146,7 @@ export function CampaignsManagement() {
     return (
       <div className="flex items-center justify-center min-h-[400px] animate-fade-in">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-wine-600 mb-4"></div>
           <p className="text-gray-600 font-outer-sans">Carregando campanhas...</p>
         </div>
       </div>
@@ -157,7 +157,7 @@ export function CampaignsManagement() {
     <div className="px-4 py-6 sm:px-0 animate-fade-in">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-orange-500 bg-clip-text text-transparent mb-1 md:mb-2 font-outer-sans leading-tight">
+          <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-wine-600 to-gold-500 bg-clip-text text-transparent mb-1 md:mb-2 font-outer-sans leading-tight">
             Gestão de Campanhas
           </h1>
           <p className="text-gray-600 font-outer-sans">Crie e gerencie suas campanhas de marketing</p>
@@ -174,7 +174,7 @@ export function CampaignsManagement() {
       {showForm && (
         <div className="card-gradient mb-6 animate-slide-up">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center shadow-lg">
               <MegaphoneIcon />
             </div>
             <h2 className="text-2xl font-bold text-gray-800 font-outer-sans">Criar Nova Campanha</h2>
@@ -333,7 +333,7 @@ export function CampaignsManagement() {
             </div>
           </form>
           {createCampaignMutation.isError && (
-            <div className="mt-4 text-red-600 font-outer-sans">
+            <div className="mt-4 text-wine-600 font-outer-sans">
               Erro ao criar campanha. Tente novamente.
             </div>
           )}
@@ -350,7 +350,7 @@ export function CampaignsManagement() {
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center shadow-lg">
                     <MegaphoneIcon />
                   </div>
                   <div className="flex-1">
@@ -377,7 +377,7 @@ export function CampaignsManagement() {
                     {campaign.objective}
                   </p>
                 )}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gradient-to-br from-purple-50 to-orange-50 rounded-lg border border-purple-100">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gradient-to-br from-wine-50 to-gold-50 rounded-lg border border-wine-100">
                   {campaign.dailyBudget && (
                     <div className="flex items-start gap-2">
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -402,7 +402,7 @@ export function CampaignsManagement() {
                   )}
                   {campaign.startDate && (
                     <div className="flex items-start gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-wine-500 to-wine-600 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <CalendarIcon />
                       </div>
                       <div>
@@ -414,7 +414,7 @@ export function CampaignsManagement() {
                     </div>
                   )}
                   <div className="flex items-start gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <CalendarIcon />
                     </div>
                     <div>
@@ -453,7 +453,7 @@ export function CampaignsManagement() {
         ))}
         {(!campaigns || campaigns.length === 0) && (
           <div className="card-gradient text-center py-16 animate-slide-up">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gold-100 to-wine-100 flex items-center justify-center mx-auto mb-4">
               <MegaphoneIcon />
             </div>
             <p className="text-gray-600 mb-2 text-lg font-medium font-outer-sans">

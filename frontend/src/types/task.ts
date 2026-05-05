@@ -1,6 +1,6 @@
 export type TaskStatus = 'BACKLOG' | 'IN_PRODUCTION' | 'FOR_APPROVAL' | 'SCHEDULED' | 'PUBLISHED';
 
-export type TaskCategory = 
+export type TaskCategory =
   | 'FACEBOOK_ADS'
   | 'INSTAGRAM_ADS'
   | 'GOOGLE_ADS'
@@ -13,7 +13,16 @@ export type TaskCategory =
   | 'COPYWRITING'
   | 'DESIGN'
   | 'VIDEO'
-  | 'OTHER';
+  | 'OTHER'
+  | 'BRIEFING'
+  | 'PROJETO_3D'
+  | 'PRODUCAO'
+  | 'MONTAGEM'
+  | 'EVENTO'
+  | 'DESMONTAGEM'
+  | 'ORCAMENTO'
+  | 'LOGISTICA'
+  | 'APROVACAO_CLIENTE';
 
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
@@ -93,6 +102,7 @@ export interface Task {
   publishedAt?: string;
   position: number;
   tags?: string;
+  clientTenantId?: string | null;
   createdAt: string;
   updatedAt: string;
   assignee?: {

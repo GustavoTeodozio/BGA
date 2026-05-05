@@ -4,8 +4,15 @@ import { useAuthStore } from '../store/auth.store';
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  role: 'ADMIN' | 'CLIENT';
+  role: 'ADMIN' | 'VENDEDOR' | 'PROJETISTA' | 'CLIENT';
 }
+
+const roleToPath: Record<string, string> = {
+  ADMIN: '/admin',
+  VENDEDOR: '/vendedor',
+  PROJETISTA: '/projetista',
+  CLIENT: '/client',
+};
 
 export function ProtectedRoute({ children, role }: ProtectedRouteProps) {
   const { isAuthenticated, user } = useAuthStore();
@@ -15,9 +22,8 @@ export function ProtectedRoute({ children, role }: ProtectedRouteProps) {
   }
 
   if (user.role !== role) {
-    return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/client'} replace />;
+    return <Navigate to={roleToPath[user.role] || '/login'} replace />;
   }
 
   return <>{children}</>;
 }
-

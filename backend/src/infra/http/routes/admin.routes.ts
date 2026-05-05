@@ -15,7 +15,7 @@ import {
 import { createReport } from '../controllers/reports.controller';
 import { listClients, updateClientStatus, updateClientProfileStatus, updateClientProfile, updateClientApiKey, deleteClient } from '../controllers/clients.controller';
 import { getAdminStats } from '../controllers/admin.controller';
-import { listUsers, listAdmins, createAdmin, deleteAdmin } from '../controllers/users.controller';
+import { listUsers, listAdmins, createAdmin, deleteAdmin, updateProfile } from '../controllers/users.controller';
 import {
   listAllTracks,
   createTrack,
@@ -45,11 +45,62 @@ import {
   updatePositions,
 } from '../controllers/task.controller';
 import { syncCampaigns } from '../controllers/facebook-ads.controller';
+import {
+  listNotes,
+  getNote,
+  createNote,
+  updateNote,
+  deleteNote,
+  togglePin,
+} from '../controllers/notes.controller';
+import {
+  listBudgets,
+  getBudget,
+  createBudget,
+  updateBudget,
+  deleteBudget,
+} from '../controllers/budgets.controller';
+import {
+  listSales,
+  getSale,
+  createSale,
+  updateSale,
+  deleteSale,
+} from '../controllers/sales.controller';
+import {
+  listProjects,
+  getProject,
+  createProject,
+  updateProject,
+  deleteProject,
+  uploadFile,
+  deleteFile,
+} from '../controllers/projects.controller';
+import {
+  getClientAISettings,
+  updateClientAISettings,
+  deleteClientAIKey,
+  getGlobalAISettings,
+  updateGlobalAISettings,
+} from '../controllers/settings.controller';
+import { ceniqChat } from '../controllers/ceniq.controller';
+import {
+  listStages,
+  listStandUpdates,
+  createStandUpdate,
+  updateStandUpdate,
+  deleteStandUpdate,
+  uploadStandUpdatePhotos,
+  deleteStandUpdatePhoto,
+  addStandUpdateComment,
+  deleteStandUpdateComment,
+} from '../controllers/stand-updates.controller';
 
 const adminRoutes = Router();
 
 adminRoutes.use(ensureAuthenticated, authorizeRoles('ADMIN'));
 
+adminRoutes.patch('/profile', asyncHandler(updateProfile));
 adminRoutes.get('/stats', asyncHandler(getAdminStats));
 adminRoutes.get('/users', asyncHandler(listUsers));
 adminRoutes.get('/admins', asyncHandler(listAdmins));
@@ -106,6 +157,60 @@ adminRoutes.post('/tasks/positions', asyncHandler(updatePositions));
 
 // Facebook Ads integration (admin pode sincronizar para qualquer cliente)
 adminRoutes.post('/facebook/sync/:clientId', asyncHandler(syncCampaigns));
+
+// Notes (admin vê todas)
+adminRoutes.get('/notes', asyncHandler(listNotes));
+adminRoutes.get('/notes/:noteId', asyncHandler(getNote));
+adminRoutes.post('/notes', asyncHandler(createNote));
+adminRoutes.patch('/notes/:noteId', asyncHandler(updateNote));
+adminRoutes.delete('/notes/:noteId', asyncHandler(deleteNote));
+adminRoutes.patch('/notes/:noteId/pin', asyncHandler(togglePin));
+
+// Budgets (admin vê todos)
+adminRoutes.get('/budgets', asyncHandler(listBudgets));
+adminRoutes.get('/budgets/:budgetId', asyncHandler(getBudget));
+adminRoutes.post('/budgets', asyncHandler(createBudget));
+adminRoutes.patch('/budgets/:budgetId', asyncHandler(updateBudget));
+adminRoutes.delete('/budgets/:budgetId', asyncHandler(deleteBudget));
+
+// Sales (admin vê todas com nome do vendedor)
+adminRoutes.get('/sales', asyncHandler(listSales));
+adminRoutes.get('/sales/:saleId', asyncHandler(getSale));
+adminRoutes.post('/sales', asyncHandler(createSale));
+adminRoutes.patch('/sales/:saleId', asyncHandler(updateSale));
+adminRoutes.delete('/sales/:saleId', asyncHandler(deleteSale));
+
+// Projects (admin vê todos)
+adminRoutes.get('/projects', asyncHandler(listProjects));
+adminRoutes.get('/projects/:projectId', asyncHandler(getProject));
+adminRoutes.post('/projects', asyncHandler(createProject));
+adminRoutes.patch('/projects/:projectId', asyncHandler(updateProject));
+adminRoutes.delete('/projects/:projectId', asyncHandler(deleteProject));
+adminRoutes.post('/projects/:projectId/files', upload.single('file'), asyncHandler(uploadFile));
+adminRoutes.delete('/projects/files/:fileId', asyncHandler(deleteFile));
+
+// Per-client AI settings
+adminRoutes.get('/settings/clients/:tenantId', asyncHandler(getClientAISettings));
+adminRoutes.patch('/settings/clients/:tenantId', asyncHandler(updateClientAISettings));
+adminRoutes.delete('/settings/clients/:tenantId/api-key', asyncHandler(deleteClientAIKey));
+
+// Global AI settings (used by admin/projetista Ceniq)
+adminRoutes.get('/settings/global', asyncHandler(getGlobalAISettings));
+adminRoutes.patch('/settings/global', asyncHandler(updateGlobalAISettings));
+
+// Ceniq AI stand design (admin)
+adminRoutes.post('/ceniq', asyncHandler(ceniqChat));
+
+// Stand Progress Tracker
+adminRoutes.get('/stand-updates/stages', asyncHandler(listStages));
+adminRoutes.get('/clients/:clientId/stand-updates', asyncHandler(listStandUpdates));
+adminRoutes.post('/clients/:clientId/stand-updates', asyncHandler(createStandUpdate));
+adminRoutes.patch('/stand-updates/:id', asyncHandler(updateStandUpdate));
+adminRoutes.delete('/stand-updates/:id', asyncHandler(deleteStandUpdate));
+adminRoutes.post('/stand-updates/:id/photos', upload.array('photos', 10), asyncHandler(uploadStandUpdatePhotos));
+adminRoutes.delete('/stand-updates/photos/:photoId', asyncHandler(deleteStandUpdatePhoto));
+adminRoutes.post('/stand-updates/:id/comments', asyncHandler(addStandUpdateComment));
+adminRoutes.delete('/stand-updates/comments/:commentId', asyncHandler(deleteStandUpdateComment));
 
 export default adminRoutes;
 

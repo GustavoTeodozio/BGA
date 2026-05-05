@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/client';
+import { useDialog } from '../../components/ConfirmDialog';
 
 // Ícones SVG minimalistas
 const UserIcon = () => (
@@ -53,11 +54,6 @@ const SettingsIcon = () => (
   </svg>
 );
 
-const KeyIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-  </svg>
-);
 
 const EyeIcon = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,13 +78,13 @@ const StatusDotIcon = ({ status }: { status: string }) => {
   const color =
     status === 'ACTIVE' ? 'bg-green-500' :
     status === 'PAUSED' ? 'bg-yellow-500' :
-    'bg-red-500';
+    'bg-wine-500';
   return <span className={`inline-block w-2 h-2 rounded-full ${color} mr-1.5`} />;
 };
 
 const PLAN_LABELS: Record<string, string> = {
-  START: 'Start',
-  MASTER: 'Master',
+  START: 'Básico',
+  MASTER: 'Intermediário',
   PREMIUM: 'Premium',
   CUSTOM: 'Personalizado',
 };
@@ -102,7 +98,7 @@ const CLIENT_STATUS_LABELS: Record<string, string> = {
 const CLIENT_STATUS_COLORS: Record<string, string> = {
   ACTIVE: 'bg-green-50 text-green-700 border-green-200',
   PAUSED: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  CANCELLED: 'bg-red-50 text-red-700 border-red-200',
+  CANCELLED: 'bg-wine-50 text-wine-700 border-wine-200',
 };
 
 const emptyForm = {
@@ -114,9 +110,7 @@ const emptyForm = {
   contactEmail: '',
   contactPhone: '',
   address: '',
-  plan: 'START' as 'START' | 'MASTER' | 'PREMIUM' | 'CUSTOM',
   customPlanDescription: '',
-  monthlyValue: '',
   contractMonths: '',
   dueDate: '',
   password: '',
@@ -124,15 +118,12 @@ const emptyForm = {
 };
 
 export function ClientManagement() {
+  const { confirm } = useDialog();
   const [showForm, setShowForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<{ id: string; name: string } | null>(null);
-  const [clientForApiKey, setClientForApiKey] = useState<{ id: string; name: string; metaApiKey?: string } | null>(null);
   const [clientForStatus, setClientForStatus] = useState<{ id: string; name: string; clientStatus: string } | null>(null);
-  const [apiKeyValue, setApiKeyValue] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
   const [newClientStatus, setNewClientStatus] = useState<'ACTIVE' | 'PAUSED' | 'CANCELLED'>('ACTIVE');
   const [statusReason, setStatusReason] = useState('');
   const [formData, setFormData] = useState(emptyForm);
@@ -157,14 +148,11 @@ export function ClientManagement() {
       fd.append('contactName', data.contactName);
       fd.append('contactEmail', data.contactEmail);
       fd.append('password', data.password);
-      fd.append('plan', data.plan);
       if (data.cpfCnpj) fd.append('cpfCnpj', data.cpfCnpj);
       if (data.segment) fd.append('segment', data.segment);
       if (data.contactPhone) fd.append('contactPhone', data.contactPhone);
       if (data.address) fd.append('address', data.address);
-      if (data.plan === 'CUSTOM' && data.customPlanDescription)
-        fd.append('customPlanDescription', data.customPlanDescription);
-      if (data.monthlyValue) fd.append('monthlyValue', data.monthlyValue);
+      if (data.customPlanDescription) fd.append('customPlanDescription', data.customPlanDescription);
       if (data.contractMonths) fd.append('contractMonths', data.contractMonths);
       if (data.dueDate) fd.append('dueDate', data.dueDate);
       data.logos.forEach((file) => fd.append('logos', file));
@@ -218,36 +206,16 @@ export function ClientManagement() {
     },
   });
 
-  const updateApiKeyMutation = useMutation({
-    mutationFn: async ({ clientId, metaApiKey }: { clientId: string; metaApiKey: string }) => {
-      const response = await api.patch(`/admin/clients/${clientId}/api-key`, { metaApiKey });
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'clients'] });
-      setShowApiKeyModal(false);
-      setClientForApiKey(null);
-      setApiKeyValue('');
-      setShowApiKey(false);
-    },
-  });
 
-  const handleToggleStatus = (clientId: string, currentStatus: boolean) => {
-    if (window.confirm(`Tem certeza que deseja ${currentStatus ? 'bloquear' : 'desbloquear'} o acesso deste cliente?`)) {
-      updateStatusMutation.mutate({ clientId, isActive: !currentStatus });
-    }
-  };
-
-  const handleApiKeyClick = (client: any) => {
-    setClientForApiKey({
-      id: client.id,
-      name: client.name || client.clients?.businessName || 'Cliente',
-      metaApiKey: client.clients?.metaApiKey,
+  const handleToggleStatus = async (clientId: string, currentStatus: boolean) => {
+    const ok = await confirm({
+      title: currentStatus ? 'Bloquear cliente' : 'Desbloquear cliente',
+      message: `Tem certeza que deseja ${currentStatus ? 'bloquear' : 'desbloquear'} o acesso deste cliente?`,
+      confirmText: currentStatus ? 'Bloquear' : 'Desbloquear',
     });
-    setApiKeyValue(client.clients?.metaApiKey || '');
-    setShowApiKey(false);
-    setShowApiKeyModal(true);
+    if (ok) updateStatusMutation.mutate({ clientId, isActive: !currentStatus });
   };
+
 
   const handleStatusClick = (client: any) => {
     setClientForStatus({
@@ -260,10 +228,6 @@ export function ClientManagement() {
     setShowStatusModal(true);
   };
 
-  const handleSaveApiKey = () => {
-    if (!clientForApiKey) return;
-    updateApiKeyMutation.mutate({ clientId: clientForApiKey.id, metaApiKey: apiKeyValue });
-  };
 
   const handleSaveStatus = () => {
     if (!clientForStatus) return;
@@ -315,7 +279,7 @@ export function ClientManagement() {
     return (
       <div className="flex items-center justify-center min-h-[400px] animate-fade-in">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-wine-600 mb-4"></div>
           <p className="text-gray-600">Carregando clientes...</p>
         </div>
       </div>
@@ -326,10 +290,10 @@ export function ClientManagement() {
     return (
       <div className="px-4 py-6 sm:px-0 animate-fade-in">
         <div className="card-gradient text-center py-12">
-          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-full bg-wine-100 flex items-center justify-center mx-auto mb-4">
             <WarningIcon />
           </div>
-          <p className="text-red-600 mb-4 font-medium">Erro ao carregar clientes. Tente novamente.</p>
+          <p className="text-wine-600 mb-4 font-medium">Erro ao carregar clientes. Tente novamente.</p>
           <button onClick={() => window.location.reload()} className="btn btn-primary">
             Recarregar
           </button>
@@ -348,7 +312,7 @@ export function ClientManagement() {
       {/* Header */}
       <div className="flex justify-between items-start gap-3 mb-6">
         <div className="min-w-0">
-          <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-orange-500 bg-clip-text text-transparent mb-1 md:mb-2 font-outer-sans leading-tight">
+          <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-wine-600 to-gold-500 bg-clip-text text-transparent mb-1 md:mb-2 font-outer-sans leading-tight">
             Gestão de Clientes
           </h1>
           <p className="text-sm md:text-base text-gray-600 font-outer-sans">Gerencie e cadastre novos clientes</p>
@@ -374,8 +338,8 @@ export function ClientManagement() {
               onClick={() => setStatusFilter(s)}
               className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-all font-outer-sans ${
                 statusFilter === s
-                  ? 'bg-purple-600 text-white border-purple-600'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-purple-300'
+                  ? 'bg-wine-600 text-white border-wine-600'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-wine-300'
               }`}
             >
               {s !== 'ALL' && <StatusDotIcon status={s} />}
@@ -389,7 +353,7 @@ export function ClientManagement() {
       {showForm && (
         <div className="card-gradient mb-6 animate-slide-up">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-wine-500 to-wine-600 flex items-center justify-center shadow-lg">
               <UserIcon />
             </div>
             <h2 className="text-2xl font-bold text-gray-800 font-outer-sans">Cadastrar Novo Cliente</h2>
@@ -482,62 +446,33 @@ export function ClientManagement() {
                 />
               </div>
 
-              {/* Plano */}
-              <div>
-                <label className="block text-sm font-medium mb-1 font-outer-sans">Plano adquirido *</label>
-                <select
-                  value={formData.plan}
-                  onChange={(e) => setFormData({ ...formData, plan: e.target.value as typeof formData.plan })}
+              {/* Descrição */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1 font-outer-sans">Observações / Descrição do projeto</label>
+                <textarea
+                  value={formData.customPlanDescription}
+                  onChange={(e) => setFormData({ ...formData, customPlanDescription: e.target.value })}
                   className="input"
-                >
-                  <option value="START">Start</option>
-                  <option value="MASTER">Master</option>
-                  <option value="PREMIUM">Premium</option>
-                  <option value="CUSTOM">Personalizado</option>
-                </select>
-              </div>
-
-              {/* Valor mensal */}
-              <div>
-                <label className="block text-sm font-medium mb-1 font-outer-sans">Valor mensal (R$)</label>
-                <input
-                  type="number" min="0" step="0.01"
-                  value={formData.monthlyValue}
-                  onChange={(e) => setFormData({ ...formData, monthlyValue: e.target.value })}
-                  className="input"
-                  placeholder="0,00"
+                  rows={3}
+                  placeholder="Descreva os materiais, dimensões, estrutura e serviços incluídos..."
                 />
               </div>
 
-              {/* Descrição plano personalizado */}
-              {formData.plan === 'CUSTOM' && (
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium mb-1 font-outer-sans">Descrição do plano personalizado</label>
-                  <textarea
-                    value={formData.customPlanDescription}
-                    onChange={(e) => setFormData({ ...formData, customPlanDescription: e.target.value })}
-                    className="input"
-                    rows={3}
-                    placeholder="Descreva os serviços incluídos no pacote personalizado..."
-                  />
-                </div>
-              )}
-
-              {/* Meses de contrato */}
+              {/* Evento / Feira */}
               <div>
-                <label className="block text-sm font-medium mb-1 font-outer-sans">Meses de contrato</label>
+                <label className="block text-sm font-medium mb-1 font-outer-sans">Evento / Feira</label>
                 <input
-                  type="number" min="1" step="1"
+                  type="text"
                   value={formData.contractMonths}
                   onChange={(e) => setFormData({ ...formData, contractMonths: e.target.value })}
                   className="input"
-                  placeholder="Ex: 12"
+                  placeholder="Ex: Agrishow 2025, Expo Fênix..."
                 />
               </div>
 
-              {/* Data de vencimento */}
+              {/* Data do evento */}
               <div>
-                <label className="block text-sm font-medium mb-1 font-outer-sans">Data de vencimento</label>
+                <label className="block text-sm font-medium mb-1 font-outer-sans">Data do evento</label>
                 <input
                   type="date"
                   value={formData.dueDate}
@@ -585,12 +520,12 @@ export function ClientManagement() {
                         <button
                           type="button"
                           onClick={() => removeLogoPreview(i)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-wine-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           ×
                         </button>
                         {i === 0 && (
-                          <span className="absolute bottom-1 left-1 text-xs bg-purple-600 text-white px-1 rounded font-outer-sans">
+                          <span className="absolute bottom-1 left-1 text-xs bg-wine-600 text-white px-1 rounded font-outer-sans">
                             Principal
                           </span>
                         )}
@@ -611,7 +546,7 @@ export function ClientManagement() {
               </button>
             </div>
             {createClientMutation.isError && (
-              <div className="text-red-600 text-sm font-outer-sans">
+              <div className="text-wine-600 text-sm font-outer-sans">
                 Erro ao cadastrar cliente. Tente novamente.
               </div>
             )}
@@ -628,7 +563,7 @@ export function ClientManagement() {
             return (
               <div
                 key={client.id}
-                className={`card-interactive animate-slide-up ${client.isActive === false ? 'opacity-75 border-2 border-red-200' : ''}`}
+                className={`card-interactive animate-slide-up ${client.isActive === false ? 'opacity-75 border-2 border-wine-200' : ''}`}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <div className="flex justify-between items-start gap-4">
@@ -665,7 +600,7 @@ export function ClientManagement() {
                       </span>
                       {/* Acesso bloqueado */}
                       {client.isActive === false && (
-                        <span className="px-2.5 py-0.5 bg-red-100 text-red-800 rounded-full text-xs font-semibold border border-red-200 font-outer-sans">
+                        <span className="px-2.5 py-0.5 bg-wine-100 text-wine-800 rounded-full text-xs font-semibold border border-wine-200 font-outer-sans">
                           ACESSO BLOQUEADO
                         </span>
                       )}
@@ -675,63 +610,46 @@ export function ClientManagement() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1 text-sm">
                         {profile.cpfCnpj && (
                           <div className="flex gap-1">
-                            <span className="text-purple-600 font-semibold font-outer-sans">CPF/CNPJ:</span>
+                            <span className="text-wine-600 font-semibold font-outer-sans">CPF/CNPJ:</span>
                             <span className="font-outer-sans truncate">{profile.cpfCnpj}</span>
                           </div>
                         )}
                         <div className="flex gap-1">
-                          <span className="text-purple-600 font-semibold font-outer-sans">Contato:</span>
+                          <span className="text-wine-600 font-semibold font-outer-sans">Contato:</span>
                           <span className="font-outer-sans truncate">{profile.mainContact}</span>
                         </div>
                         <div className="flex gap-1">
-                          <span className="text-purple-600 font-semibold font-outer-sans">Email:</span>
+                          <span className="text-wine-600 font-semibold font-outer-sans">Email:</span>
                           <span className="font-outer-sans truncate">{profile.mainEmail}</span>
                         </div>
                         {profile.mainPhone && (
                           <div className="flex gap-1">
-                            <span className="text-purple-600 font-semibold font-outer-sans">Telefone:</span>
+                            <span className="text-wine-600 font-semibold font-outer-sans">Telefone:</span>
                             <span className="font-outer-sans">{profile.mainPhone}</span>
                           </div>
                         )}
                         {profile.address && (
                           <div className="flex gap-1 sm:col-span-2">
-                            <span className="text-purple-600 font-semibold font-outer-sans">Endereço:</span>
+                            <span className="text-wine-600 font-semibold font-outer-sans">Endereço:</span>
                             <span className="font-outer-sans truncate">{profile.address}</span>
-                          </div>
-                        )}
-                        <div className="flex gap-1">
-                          <span className="text-purple-600 font-semibold font-outer-sans">Plano:</span>
-                          <span className={`px-1.5 py-0 rounded text-xs font-semibold font-outer-sans ${
-                            profile.plan === 'PREMIUM' ? 'bg-yellow-100 text-yellow-800' :
-                            profile.plan === 'MASTER' ? 'bg-blue-100 text-blue-800' :
-                            profile.plan === 'CUSTOM' ? 'bg-purple-100 text-purple-800' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {PLAN_LABELS[profile.plan] ?? profile.plan}
-                          </span>
-                        </div>
-                        {profile.monthlyValue && (
-                          <div className="flex gap-1">
-                            <span className="text-purple-600 font-semibold font-outer-sans">Valor mensal:</span>
-                            <span className="font-outer-sans">R$ {Number(profile.monthlyValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                           </div>
                         )}
                         {profile.contractMonths && (
                           <div className="flex gap-1">
-                            <span className="text-purple-600 font-semibold font-outer-sans">Contrato:</span>
-                            <span className="font-outer-sans">{profile.contractMonths} meses</span>
+                            <span className="text-wine-600 font-semibold font-outer-sans">Evento:</span>
+                            <span className="font-outer-sans truncate">{profile.contractMonths}</span>
                           </div>
                         )}
                         {profile.dueDate && (
                           <div className="flex gap-1">
-                            <span className="text-purple-600 font-semibold font-outer-sans">Vencimento:</span>
+                            <span className="text-wine-600 font-semibold font-outer-sans">Data do evento:</span>
                             <span className="font-outer-sans">{new Date(profile.dueDate).toLocaleDateString('pt-BR')}</span>
                           </div>
                         )}
                         {(clientStatus === 'PAUSED' || clientStatus === 'CANCELLED') && profile.statusReason && (
                           <div className="flex gap-1 sm:col-span-2 lg:col-span-3">
-                            <span className="text-orange-600 font-semibold font-outer-sans">Motivo:</span>
-                            <span className="font-outer-sans text-orange-700">{profile.statusReason}</span>
+                            <span className="text-gold-600 font-semibold font-outer-sans">Motivo:</span>
+                            <span className="font-outer-sans text-gold-700">{profile.statusReason}</span>
                           </div>
                         )}
                       </div>
@@ -763,20 +681,13 @@ export function ClientManagement() {
                         disabled={updateStatusMutation.isPending}
                         className={`btn text-xs flex items-center gap-1 font-outer-sans ${
                           client.isActive !== false
-                            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700'
+                            ? 'bg-gradient-to-r from-wine-500 to-wine-600 text-white hover:from-wine-600 hover:to-wine-700'
                             : 'btn-primary'
                         }`}
                         title={client.isActive !== false ? 'Bloquear acesso ao sistema' : 'Desbloquear acesso ao sistema'}
                       >
                         {client.isActive !== false ? <LockIcon /> : <UnlockIcon />}
                         <span>{client.isActive !== false ? 'Bloquear' : 'Desbloquear'}</span>
-                      </button>
-                      <button
-                        onClick={() => handleApiKeyClick(client)}
-                        className="btn btn-primary text-xs flex items-center gap-1 font-outer-sans"
-                      >
-                        <KeyIcon />
-                        <span>API Key</span>
                       </button>
                       <Link
                         to={`/admin/clients/${client.id}`}
@@ -801,7 +712,7 @@ export function ClientManagement() {
           })
         ) : (
           <div className="card-gradient text-center py-16 animate-slide-up">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-100 to-orange-100 flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-wine-100 to-gold-100 flex items-center justify-center mx-auto mb-4">
               <UsersIcon />
             </div>
             <p className="text-gray-600 mb-2 text-lg font-medium font-outer-sans">
@@ -843,7 +754,7 @@ export function ClientManagement() {
                         newClientStatus === s
                           ? s === 'ACTIVE' ? 'bg-green-500 text-white border-green-500'
                           : s === 'PAUSED' ? 'bg-yellow-500 text-white border-yellow-500'
-                          : 'bg-red-500 text-white border-red-500'
+                          : 'bg-wine-500 text-white border-wine-500'
                           : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                       }`}
                     >
@@ -876,7 +787,7 @@ export function ClientManagement() {
                 <button
                   onClick={handleSaveStatus}
                   disabled={updateClientStatusMutation.isPending}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-orange-500 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-orange-600 transition-all font-outer-sans flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-wine-600 to-gold-500 text-white rounded-lg font-semibold hover:from-wine-700 hover:to-gold-600 transition-all font-outer-sans flex items-center justify-center gap-2"
                 >
                   {updateClientStatusMutation.isPending ? (
                     <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div><span>Salvando...</span></>
@@ -891,24 +802,24 @@ export function ClientManagement() {
       {/* Modal: Excluir */}
       {showDeleteModal && clientToDelete && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 border border-red-200 animate-scale-in">
+          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 border border-wine-200 animate-scale-in">
             <div className="flex items-center gap-3 mb-4">
               <WarningIcon />
-              <h2 className="text-2xl font-bold text-red-600 font-outer-sans">Confirmar Exclusão</h2>
+              <h2 className="text-2xl font-bold text-wine-600 font-outer-sans">Confirmar Exclusão</h2>
             </div>
             <p className="text-gray-700 mb-4 font-outer-sans">
               Tem certeza que deseja excluir o cliente <strong>{clientToDelete.name}</strong>?
             </p>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="bg-wine-50 border border-wine-200 rounded-lg p-4 mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <WarningIcon />
-                <h3 className="font-bold text-red-800 font-outer-sans">ATENÇÃO: Esta ação é IRREVERSÍVEL!</h3>
+                <h3 className="font-bold text-wine-800 font-outer-sans">ATENÇÃO: Esta ação é IRREVERSÍVEL!</h3>
               </div>
-              <ul className="text-sm text-red-700 space-y-1 list-disc list-inside font-outer-sans">
+              <ul className="text-sm text-wine-700 space-y-1 list-disc list-inside font-outer-sans">
                 <li>Todos os dados do cliente serão <strong>permanentemente excluídos</strong></li>
-                <li>Todas as <strong>campanhas</strong> serão perdidas</li>
-                <li>Todos os <strong>conteúdos e mídias</strong> serão removidos</li>
-                <li>Todos os <strong>relatórios</strong> serão deletados</li>
+                <li>Todos os <strong>projetos e arquivos</strong> serão perdidos</li>
+                <li>Todos os <strong>orçamentos</strong> serão removidos</li>
+                <li>Todo o <strong>histórico</strong> será deletado</li>
               </ul>
             </div>
             <div className="flex justify-end gap-3">
@@ -935,69 +846,6 @@ export function ClientManagement() {
         </div>
       )}
 
-      {/* Modal: API Key */}
-      {showApiKeyModal && clientForApiKey && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 animate-slide-up">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-orange-500 flex items-center justify-center">
-                    <KeyIcon />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-800 font-outer-sans">Chave API da Meta</h3>
-                    <p className="text-sm text-gray-600 font-outer-sans">{clientForApiKey.name}</p>
-                  </div>
-                </div>
-                <button onClick={() => { setShowApiKeyModal(false); setClientForApiKey(null); setApiKeyValue(''); setShowApiKey(false); }} className="text-gray-400 hover:text-gray-600 transition-colors">
-                  <XIcon />
-                </button>
-              </div>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700 font-outer-sans">
-                  Chave de API da Meta (Facebook/Instagram)
-                </label>
-                <div className="relative">
-                  <input
-                    type={showApiKey ? 'text' : 'password'}
-                    value={apiKeyValue}
-                    onChange={(e) => setApiKeyValue(e.target.value)}
-                    className="input pr-10 font-outer-sans"
-                    placeholder="Cole sua chave de API da Meta aqui"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-                  >
-                    {showApiKey ? <EyeOffIcon /> : <EyeIcon />}
-                  </button>
-                </div>
-              </div>
-              <div className="flex gap-3 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => { setShowApiKeyModal(false); setClientForApiKey(null); setApiKeyValue(''); setShowApiKey(false); }}
-                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors font-outer-sans"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSaveApiKey}
-                  disabled={updateApiKeyMutation.isPending}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-orange-500 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-orange-600 transition-all shadow-lg font-outer-sans flex items-center justify-center gap-2"
-                >
-                  {updateApiKeyMutation.isPending ? (
-                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div><span>Salvando...</span></>
-                  ) : 'Salvar Chave'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

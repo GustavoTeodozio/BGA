@@ -14,7 +14,7 @@
   }
   
   .btn-primary {
-    @apply bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 shadow-lg hover:shadow-xl;
+    @apply bg-gradient-to-r from-wine-600 to-wine-700 text-white hover:from-wine-700 hover:to-wine-800 shadow-lg hover:shadow-xl;
   }
   
   .btn-secondary {
@@ -30,7 +30,7 @@
   }
 
   .card-gradient {
-    @apply bg-gradient-to-br from-purple-50 to-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-2xl border border-purple-100;
+    @apply bg-gradient-to-br from-wine-50 to-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-2xl border border-wine-100;
   }
 
   .card-interactive {
@@ -38,7 +38,7 @@
   }
   
   .input {
-    @apply w-full px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 placeholder:text-gray-500;
+    @apply w-full px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wine-500 focus:border-wine-500 transition-all duration-200 placeholder:text-gray-500;
   }
 
   .nav-link {
@@ -46,21 +46,21 @@
   }
 
   .nav-link-active {
-    @apply text-purple-600 font-semibold;
+    @apply text-wine-600 font-semibold;
   }
 
   .nav-link-active::after {
     content: '';
-    @apply absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-600 to-orange-500 rounded-full;
+    @apply absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-wine-600 to-gold-500 rounded-full;
   }
 
   .stat-card {
-    @apply relative overflow-hidden bg-gradient-to-br from-white to-purple-50 rounded-xl shadow-lg p-6 border border-purple-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1;
+    @apply relative overflow-hidden bg-gradient-to-br from-white to-wine-50 rounded-xl shadow-lg p-6 border border-wine-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1;
   }
 
   .stat-card::before {
     content: '';
-    @apply absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-200/30 to-transparent rounded-full blur-2xl;
+    @apply absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-wine-200/30 to-transparent rounded-full blur-2xl;
   }
 }
 
@@ -173,10 +173,10 @@
 
   @keyframes glow {
     0%, 100% {
-      box-shadow: 0 0 5px rgba(147, 51, 234, 0.5);
+      box-shadow: 0 0 5px rgba(169, 25, 25, 0.5);
     }
     50% {
-      box-shadow: 0 0 20px rgba(147, 51, 234, 0.8), 0 0 30px rgba(249, 115, 22, 0.6);
+      box-shadow: 0 0 20px rgba(169, 25, 25, 0.8), 0 0 30px rgba(245, 185, 50, 0.6);
     }
   }
 

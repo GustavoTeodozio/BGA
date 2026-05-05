@@ -14,6 +14,7 @@ import { listTrainingTracks, saveProgress } from '../controllers/training.contro
 import { listResults, registerResult } from '../controllers/results.controller';
 import { getReport, listReports } from '../controllers/reports.controller';
 import { createLead, listLeads } from '../controllers/leads.controller';
+import { listLinkedOpportunities } from '../controllers/crm.controller';
 import {
   listNotifications,
   markNotificationAsRead,
@@ -24,13 +25,16 @@ import {
   addComment,
   updateChecklistItem,
 } from '../controllers/task.controller';
-import { listUsers } from '../controllers/users.controller';
+import { listUsers, updateProfile } from '../controllers/users.controller';
 import { syncCampaigns } from '../controllers/facebook-ads.controller';
+import { ceniqChat } from '../controllers/ceniq.controller';
+import { getClientStandUpdates, addClientStandComment } from '../controllers/stand-updates.controller';
 
 const clientRoutes = Router();
 
 clientRoutes.use(ensureAuthenticated, ensureTenant);
 
+clientRoutes.patch('/profile', asyncHandler(updateProfile));
 clientRoutes.get('/dashboard/summary', asyncHandler(getSummary));
 
 clientRoutes.get('/media', asyncHandler(listMedia));
@@ -64,6 +68,16 @@ clientRoutes.patch('/tasks/checklist/:itemId', asyncHandler(updateChecklistItem)
 
 // Facebook Ads integration
 clientRoutes.post('/facebook/sync', asyncHandler(syncCampaigns));
+
+// Ceniq AI stand design
+clientRoutes.post('/ceniq', asyncHandler(ceniqChat));
+
+// Linked CRM opportunities (directed to this client by admin)
+clientRoutes.get('/linked-opportunities', asyncHandler(listLinkedOpportunities));
+
+// Stand Progress Tracker
+clientRoutes.get('/stand-updates', asyncHandler(getClientStandUpdates));
+clientRoutes.post('/stand-updates/:id/comments', asyncHandler(addClientStandComment));
 
 export default clientRoutes;
 

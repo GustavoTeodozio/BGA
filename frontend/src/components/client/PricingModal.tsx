@@ -22,44 +22,44 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
 
   // Componentes de ícones SVG
   const GearIcon = () => (
-    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 text-wine-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   );
 
   const UsersIcon = () => (
-    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 text-wine-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
     </svg>
   );
 
   const SparkleIcon = () => (
-    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 text-wine-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
     </svg>
   );
 
   const AutomationIcon = () => (
-    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 text-wine-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
   );
 
   const ChatIcon = () => (
-    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 text-wine-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
     </svg>
   );
 
   const CommentIcon = () => (
-    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 text-wine-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
     </svg>
   );
 
   const TargetIcon = () => (
-    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 text-wine-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
     </svg>
   );
@@ -67,12 +67,12 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
   const plans = [
     {
       id: 'ai',
-      title: 'Outset IA',
+      title: 'BGA STANDS IA',
       badge: 'IA',
       badgeText: 'Esta extensão é exclusiva da versão Pro',
       price: 'R$ 299',
       period: '/mês',
-      description: 'Aprimore o Outset Pro usando IA para automações mais eficientes, interações mais eficazes e mais conversões com menos trabalho',
+      description: 'Aprimore o BGA STANDS Pro usando IA para automações mais eficientes, interações mais eficazes e mais conversões com menos trabalho',
       features: [
         {
           icon: <GearIcon />,
@@ -121,7 +121,7 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col animate-fade-in">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-purple-50 to-indigo-50">
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-wine-50 to-indigo-50">
           <div>
             <h2 className="text-2xl font-bold text-gray-800 font-outer-sans">
               Descubra todo o poder do marketing por mensagem
@@ -147,8 +147,8 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                   key={plan.id}
                   className={`border-2 rounded-xl p-6 transition-all duration-200 cursor-pointer ${
                     selectedPlans.has(plan.id)
-                      ? 'border-purple-500 bg-purple-50/50 shadow-lg'
-                      : 'border-gray-200 hover:border-purple-300 bg-white'
+                      ? 'border-wine-500 bg-wine-50/50 shadow-lg'
+                      : 'border-gray-200 hover:border-wine-300 bg-white'
                   }`}
                   onClick={() => togglePlan(plan.id)}
                 >
@@ -158,7 +158,7 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                         type="checkbox"
                         checked={selectedPlans.has(plan.id)}
                         onChange={() => togglePlan(plan.id)}
-                        className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 cursor-pointer"
+                        className="w-5 h-5 text-wine-600 border-gray-300 rounded focus:ring-wine-500 cursor-pointer"
                       />
                       <div>
                         <div className="flex items-center gap-2">
@@ -188,7 +188,7 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                   <p className="text-sm text-gray-600 mb-4 font-outer-sans">{plan.description}</p>
 
                   {plan.link && (
-                    <a href="#" className="text-purple-600 hover:text-purple-700 text-sm font-semibold font-outer-sans">
+                    <a href="#" className="text-wine-600 hover:text-wine-700 text-sm font-semibold font-outer-sans">
                       {plan.link} →
                     </a>
                   )}
@@ -197,7 +197,7 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                     <div className="mt-4 space-y-3 pt-4 border-t border-gray-200">
                       {plan.features.map((feature, index) => (
                         <div key={index} className="flex items-start gap-3">
-                          <div className="flex-shrink-0 mt-0.5 p-1.5 bg-purple-50 rounded-lg">
+                          <div className="flex-shrink-0 mt-0.5 p-1.5 bg-wine-50 rounded-lg">
                             {feature.icon}
                           </div>
                           <div className="flex items-center gap-2 flex-1">
@@ -266,7 +266,7 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                     </tbody>
                   </table>
                 </div>
-                <button className="mt-4 text-purple-600 hover:text-purple-700 text-sm font-semibold font-outer-sans">
+                <button className="mt-4 text-wine-600 hover:text-wine-700 text-sm font-semibold font-outer-sans">
                   Ver Tabela Completa →
                 </button>
               </div>
@@ -292,14 +292,14 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
 
                 <div className="flex justify-between items-center mb-6 pt-3 border-t-2 border-gray-300">
                   <span className="text-lg font-bold text-gray-800 font-outer-sans">Total</span>
-                  <span className="text-2xl font-bold text-purple-600 font-outer-sans">R$ {total}</span>
+                  <span className="text-2xl font-bold text-wine-600 font-outer-sans">R$ {total}</span>
                 </div>
 
                 <button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl py-4 font-bold text-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 font-outer-sans mb-3">
                   Assinar
                 </button>
 
-                <a href="#" className="block text-center text-sm text-purple-600 hover:text-purple-700 font-outer-sans mb-4">
+                <a href="#" className="block text-center text-sm text-wine-600 hover:text-wine-700 font-outer-sans mb-4">
                   Aplicar Cupom
                 </a>
 
@@ -309,8 +309,8 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                   </p>
                   <p>
                     Ao continuar, você concorda com os{' '}
-                    <a href="#" className="text-purple-600 hover:underline">
-                      Termos Adicionais de Serviço da Outset IA
+                    <a href="#" className="text-wine-600 hover:underline">
+                      Termos Adicionais de Serviço da BGA STANDS IA
                     </a>
                     .
                   </p>

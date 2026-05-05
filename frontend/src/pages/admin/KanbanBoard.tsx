@@ -1,9 +1,10 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/client';
 import type { Task, TaskStatus } from '../../types/task';
 import { TaskCard } from '../../components/KanbanCard';
 import { TaskModal } from '../../components/TaskModal';
+import { useDialog } from '../../components/ConfirmDialog';
 
 const ColumnIcon = ({ type }: { type: TaskStatus }) => {
   const iconClass = "w-5 h-5 text-white";
@@ -25,14 +26,13 @@ const ColumnIcon = ({ type }: { type: TaskStatus }) => {
     case 'FOR_APPROVAL':
       return (
         <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
       );
     case 'SCHEDULED':
       return (
         <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
         </svg>
       );
     case 'PUBLISHED':
@@ -47,7 +47,7 @@ const ColumnIcon = ({ type }: { type: TaskStatus }) => {
 const columns: { id: TaskStatus; title: string; color: string; gradient: string }[] = [
   {
     id: 'BACKLOG',
-    title: 'Backlog',
+    title: 'Solicitado',
     color: 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300',
     gradient: 'from-gray-500 to-gray-600'
   },
@@ -59,19 +59,19 @@ const columns: { id: TaskStatus; title: string; color: string; gradient: string 
   },
   {
     id: 'FOR_APPROVAL',
-    title: 'Para Aprovação',
-    color: 'bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-300',
-    gradient: 'from-yellow-500 to-orange-500'
+    title: 'Aprovação',
+    color: 'bg-gradient-to-br from-yellow-50 to-gold-50 border-yellow-300',
+    gradient: 'from-yellow-500 to-gold-500'
   },
   {
     id: 'SCHEDULED',
-    title: 'Agendado',
-    color: 'bg-gradient-to-br from-purple-50 to-pink-50 border-purple-300',
-    gradient: 'from-purple-500 to-pink-500'
+    title: 'Montagem',
+    color: 'bg-gradient-to-br from-wine-50 to-pink-50 border-wine-300',
+    gradient: 'from-wine-500 to-pink-500'
   },
   {
     id: 'PUBLISHED',
-    title: 'Publicado',
+    title: 'Concluído',
     color: 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-300',
     gradient: 'from-green-500 to-emerald-500'
   },
@@ -82,12 +82,24 @@ let touchGhost: HTMLElement | null = null;
 
 export function KanbanBoard() {
   const queryClient = useQueryClient();
+  const { confirm } = useDialog();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showNewTaskModal, setShowNewTaskModal] = useState<TaskStatus | null>(null);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; task: Task } | null>(null);
   const touchDragTask = useRef<Task | null>(null);
   const columnRefs = useRef<Partial<Record<TaskStatus, HTMLDivElement>>>({});
+
+  useEffect(() => {
+    const close = () => setContextMenu(null);
+    window.addEventListener('click', close);
+    window.addEventListener('scroll', close, true);
+    return () => {
+      window.removeEventListener('click', close);
+      window.removeEventListener('scroll', close, true);
+    };
+  }, []);
 
   const { data, isLoading } = useQuery({
     queryKey: ['tasks'],
@@ -96,6 +108,25 @@ export function KanbanBoard() {
       return response.data;
     },
   });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      await api.delete(`/admin/tasks/${taskId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+
+  const handleContextMenuDelete = async (task: Task) => {
+    setContextMenu(null);
+    const ok = await confirm({
+      title: 'Excluir tarefa',
+      message: 'Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.',
+      confirmText: 'Excluir',
+    });
+    if (ok) deleteTaskMutation.mutate(task.id);
+  };
 
   const updatePositionsMutation = useMutation({
     mutationFn: async (updates: { id: string; position: number; status: TaskStatus }[]) => {
@@ -272,7 +303,7 @@ export function KanbanBoard() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-wine-600 mb-4"></div>
           <p className="text-gray-600 font-outer-sans">Carregando Kanban...</p>
         </div>
       </div>
@@ -286,18 +317,18 @@ export function KanbanBoard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 md:mb-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 md:gap-4 mb-2 md:mb-3">
-              <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-gradient-to-br from-purple-600 via-purple-500 to-orange-500 flex items-center justify-center shadow-lg md:shadow-xl shadow-purple-500/30 transform hover:scale-105 transition-transform duration-300 flex-shrink-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-400/20 to-orange-400/20 rounded-xl md:rounded-2xl blur-sm"></div>
+              <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-gradient-to-br from-wine-600 via-wine-500 to-gold-500 flex items-center justify-center shadow-lg md:shadow-xl shadow-wine-500/30 transform hover:scale-105 transition-transform duration-300 flex-shrink-0">
+                <div className="absolute inset-0 bg-gradient-to-br from-wine-400/20 to-gold-400/20 rounded-xl md:rounded-2xl blur-sm"></div>
                 <svg className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
                 </svg>
               </div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black bg-gradient-to-r from-purple-600 via-purple-500 to-orange-500 bg-clip-text text-transparent font-outer-sans tracking-tight">
-                Kanban Outset
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black bg-gradient-to-r from-wine-600 via-wine-500 to-gold-500 bg-clip-text text-transparent font-outer-sans tracking-tight">
+                Kanban BGA STANDS
               </h1>
             </div>
             <p className="text-gray-600 font-outer-sans text-sm sm:text-base md:text-lg ml-0 sm:ml-1 flex items-center gap-2">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-wine-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
               </svg>
               <span className="hidden sm:inline">Organize seu fluxo de trabalho de forma visual e intuitiva</span>
@@ -306,7 +337,7 @@ export function KanbanBoard() {
           </div>
           <button
             onClick={() => setShowNewTaskModal('BACKLOG')}
-            className="group relative px-4 py-2.5 sm:px-6 sm:py-3 bg-gradient-to-r from-purple-600 to-orange-500 text-white rounded-xl font-semibold font-outer-sans shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base w-full sm:w-auto"
+            className="group relative px-4 py-2.5 sm:px-6 sm:py-3 bg-gradient-to-r from-wine-600 to-gold-500 text-white rounded-xl font-semibold font-outer-sans shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base w-full sm:w-auto"
           >
             <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -344,7 +375,7 @@ export function KanbanBoard() {
             onDrop={(e) => handleDrop(e, column.id)}
             className={`snap-start shrink-0 w-[260px] sm:w-[280px] lg:shrink lg:flex-1 lg:w-auto lg:min-w-0 rounded-2xl border-2 p-3 sm:p-4 min-h-[200px] md:min-h-[400px] transition-all duration-300 backdrop-blur-sm ${
               column.color
-            } ${dragOverColumn === column.id ? 'shadow-2xl scale-[1.01] ring-4 ring-purple-400 ring-opacity-50' : 'shadow-sm hover:shadow-md'}`}
+            } ${dragOverColumn === column.id ? 'shadow-2xl scale-[1.01] ring-4 ring-wine-400 ring-opacity-50' : 'shadow-sm hover:shadow-md'}`}
           >
             {/* Column Header */}
             <div className="mb-3 sm:mb-4 pb-3 sm:pb-4 border-b-2 border-gray-200">
@@ -384,6 +415,10 @@ export function KanbanBoard() {
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                   onClick={() => setSelectedTask(task)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({ x: e.clientX, y: e.clientY, task });
+                  }}
                   className={`cursor-move touch-none select-none ${draggedTask?.id === task.id ? 'opacity-40' : ''}`}
                 >
                   <TaskCard
@@ -396,6 +431,35 @@ export function KanbanBoard() {
           </div>
         ))}
       </div>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className="fixed z-[9999] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden py-1 min-w-[160px]"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => { setSelectedTask(contextMenu.task); setContextMenu(null); }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors font-outer-sans"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Editar tarefa
+          </button>
+          <div className="border-t border-gray-100 my-1" />
+          <button
+            onClick={() => handleContextMenuDelete(contextMenu.task)}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors font-outer-sans"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Excluir tarefa
+          </button>
+        </div>
+      )}
 
       {/* Task Modal */}
       {(selectedTask || showNewTaskModal) && (

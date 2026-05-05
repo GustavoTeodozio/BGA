@@ -1,0 +1,195 @@
+import { Link, useLocation } from 'react-router-dom';
+import { UserAvatar } from '../UserAvatar';
+
+interface VendedorSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function VendedorSidebar({ isOpen, onClose }: VendedorSidebarProps) {
+  const location = useLocation();
+
+  const isActive = (path: string) => {
+    if (path === '/vendedor') return location.pathname === '/vendedor';
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
+  // ── Ícones ──────────────────────────────────────────────────────────────
+  const DashboardIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+  );
+
+  const CRMIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  );
+
+  const AgendaIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  );
+
+  const KanbanIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v12a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 17a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2z" />
+    </svg>
+  );
+
+  const ClientsIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  );
+
+  const NotesIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+  );
+
+  const BudgetIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+    </svg>
+  );
+
+  const SalesIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+    </svg>
+  );
+
+  const menuItems = [
+    { path: '/vendedor',            label: 'Dashboard',    icon: DashboardIcon, description: 'Visão geral' },
+    { path: '/vendedor/crm',        label: 'CRM Pipeline', icon: CRMIcon,       description: 'Funil de vendas' },
+    { path: '/vendedor/crm-agenda', label: 'Agenda CRM',   icon: AgendaIcon,    description: 'Atividades do dia' },
+    { path: '/vendedor/kanban',     label: 'Kanban',       icon: KanbanIcon,    description: 'Fluxo de projetos' },
+    { path: '/vendedor/clients',    label: 'Clientes',     icon: ClientsIcon,   description: 'Cadastrar e visualizar' },
+    { path: '/vendedor/notes',      label: 'Anotações',    icon: NotesIcon,     description: 'Suas anotações' },
+    { path: '/vendedor/budgets',    label: 'Orçamentos',   icon: BudgetIcon,    description: 'Criar e gerenciar' },
+    { path: '/vendedor/sales',      label: 'Vendas',       icon: SalesIcon,     description: 'Histórico de vendas' },
+  ];
+
+  // Separar seções visualmente
+  const sections = [
+    { label: null,    items: menuItems.slice(0, 1) },
+    { label: 'CRM',   items: menuItems.slice(1, 3) },
+    { label: 'TRABALHO', items: menuItems.slice(3, 8) },
+  ];
+
+  return (
+    <>
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm" onClick={onClose} />
+      )}
+
+      <aside
+        className={`fixed left-0 top-0 h-screen w-60 z-50 flex flex-col transition-transform duration-300 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:z-40`}
+        style={{
+          background: 'linear-gradient(180deg, #043a1a 0%, #065c28 40%, #054d21 100%)',
+          boxShadow: '4px 0 24px rgba(0,0,0,0.25)',
+        }}
+      >
+        {/* ── Logo ── */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-white/8">
+          <Link to="/vendedor" onClick={onClose} className="flex items-center gap-3 group min-w-0">
+            <div className="flex-shrink-0 w-9 h-9 rounded-xl overflow-hidden bg-white/10 flex items-center justify-center shadow-lg">
+              <img
+                src="/LOGO.png"
+                alt="BGA"
+                style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }}
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="text-white font-bold text-sm leading-tight truncate font-outer-sans">BGA STANDS</p>
+              <p className="text-green-300/70 text-[10px] font-outer-sans">Painel Vendedor</p>
+            </div>
+          </Link>
+          <button onClick={onClose} className="md:hidden text-green-300 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* ── Status badge ── */}
+        <div className="px-4 pt-3 pb-2">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/15 border border-green-400/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0"></span>
+            <span className="text-[11px] font-semibold text-green-200 font-outer-sans">Vendedor · Online</span>
+          </div>
+        </div>
+
+        {/* ── Navigation ── */}
+        <nav className="flex-1 px-3 py-2 overflow-y-auto space-y-0.5">
+          {sections.map((section, si) => (
+            <div key={si} className={si > 0 ? 'mt-3' : ''}>
+              {section.label && (
+                <p className="text-[9px] font-bold text-green-400/50 uppercase tracking-widest px-3 mb-1.5 font-outer-sans">
+                  {section.label}
+                </p>
+              )}
+              {section.items.map((item) => {
+                const active = isActive(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={onClose}
+                    className={`group relative flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150
+                      ${active
+                        ? 'bg-gradient-to-r from-green-500/90 to-green-600/90 text-white shadow-md shadow-green-900/40'
+                        : 'text-green-200/80 hover:bg-white/8 hover:text-white'
+                      }`}
+                  >
+                    {active && (
+                      <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-green-300 rounded-r-full" />
+                    )}
+
+                    <div className={`relative z-10 flex-shrink-0 transition-transform duration-150
+                      ${active ? 'text-white' : 'text-green-300 group-hover:text-white group-hover:scale-110'}`}>
+                      <item.icon />
+                    </div>
+
+                    <div className="flex-1 min-w-0 relative z-10">
+                      <div className={`text-[13px] font-semibold truncate font-outer-sans leading-tight
+                        ${active ? 'text-white' : 'text-green-100'}`}>
+                        {item.label}
+                      </div>
+                      <div className={`text-[10px] truncate font-outer-sans leading-tight
+                        ${active ? 'text-green-100/80' : 'text-green-400/60'}`}>
+                        {item.description}
+                      </div>
+                    </div>
+
+                    {active && (
+                      <svg className="w-3 h-3 text-green-200 flex-shrink-0 relative z-10" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        {/* ── Footer ── */}
+        <div className="px-3 py-3 border-t border-white/8">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5">
+            <UserAvatar size={6} />
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] text-green-200 font-semibold truncate font-outer-sans">Vendedor</p>
+              <p className="text-[10px] text-green-400/60 font-outer-sans">Acesso limitado</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+}

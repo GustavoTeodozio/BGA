@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sed -i 's/className=\"text-4xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent font-outer-sans\"/className=\"text-2xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent font-outer-sans\"/g' frontend/src/pages/admin/AdminDashboardHome.tsx)",
+      "Bash(sed -i 's/className=\"text-4xl font-bold bg-gradient-to-r from-orange-500 to-orange-700 bg-clip-text text-transparent font-outer-sans\"/className=\"text-2xl md:text-4xl font-bold bg-gradient-to-r from-orange-500 to-orange-700 bg-clip-text text-transparent font-outer-sans\"/g' frontend/src/pages/admin/AdminDashboardHome.tsx)",
+      "Bash(sed -i 's/className=\"text-4xl font-bold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent font-outer-sans\"/className=\"text-2xl md:text-4xl font-bold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent font-outer-sans\"/g' frontend/src/pages/admin/AdminDashboardHome.tsx)",
+      "Bash(sed -i 's/className=\"text-4xl font-bold bg-gradient-to-r from-green-500 to-green-700 bg-clip-text text-transparent font-outer-sans\"/className=\"text-2xl md:text-4xl font-bold bg-gradient-to-r from-green-500 to-green-700 bg-clip-text text-transparent font-outer-sans\"/g' frontend/src/pages/admin/AdminDashboardHome.tsx)"
+    ]
+  }
+}
