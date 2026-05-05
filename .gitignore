@@ -64,3 +64,6 @@ coverage/
 .cache/
 .temp/
 
+# Runtime data with secrets
+backend/data/settings.json
+

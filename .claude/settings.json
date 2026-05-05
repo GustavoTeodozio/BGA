@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npx tsc *)",
       "Bash(grep -n \"select: { id: true, name: true }\" \"c:\\\\Users\\\\Gustavo Teodozio\\\\Downloads\\\\bga\\\\bga\\\\backend\\\\src\\\\infra\\\\http\\\\controllers\\\\stand-updates.controller.ts\")",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git filter-branch *)",
+      "Bash(git stash *)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter \"git rm --cached --ignore-unmatch backend/data/settings.json\" --prune-empty --tag-name-filter cat -- --all)"
     ]
   }
 }
