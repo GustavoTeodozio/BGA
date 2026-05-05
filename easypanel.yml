@@ -1,32 +1,24 @@
-# Configuração EasyPanel para Adriel
-# Este arquivo pode ser usado como referência ao configurar no painel do EasyPanel
-
 version: '3.8'
 
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-adriel}
+      POSTGRES_USER: ${POSTGRES_USER:-bga}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-adriel}
+      POSTGRES_DB: ${POSTGRES_DB:-bga}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-adriel}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bga}"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
-    # Recursos recomendados:
-    # CPU: 0.5-1 vCPU
-    # RAM: 1-2 GB
 
-  # Redis Cache
   redis:
     image: redis:7-alpine
-    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     healthcheck:
@@ -35,11 +27,7 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
-    # Recursos recomendados:
-    # CPU: 0.1-0.3 vCPU
-    # RAM: 256-512 MB
 
-  # Backend API
   backend:
     build:
       context: ./backend
@@ -47,14 +35,14 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3333
-      DATABASE_URL: postgresql://postgres:f366cbf3c9d44f089e96@marketing_outsetpostgres:5432/outset?sslmode=disable
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_EXPIRES_IN: 15m
       REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
-      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-7d}
+      REFRESH_TOKEN_EXPIRES_IN: 7d
       APP_URL: ${APP_URL}
-      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      STORAGE_DRIVER: local
     volumes:
       - backend_storage:/app/storage
       - backend_tmp:/app/tmp
@@ -64,37 +52,17 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
-    # Recursos recomendados:
-    # CPU: 0.5-1 vCPU
-    # RAM: 512 MB - 1 GB
 
-  # Frontend React
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    environment:
-      VITE_API_URL: ${VITE_API_URL}
     depends_on:
       - backend
     restart: unless-stopped
-    # Recursos recomendados:
-    # CPU: 0.1-0.3 vCPU
-    # RAM: 100-256 MB
 
 volumes:
   postgres_data:
   redis_data:
   backend_storage:
   backend_tmp:
-
-# Notas para configuração no EasyPanel:
-# 1. Cada serviço deve ser criado como uma aplicação separada
-# 2. Use os nomes dos serviços como hostnames internos (ex: postgres, redis, backend)
-# 3. Configure volumes persistentes para dados importantes
-# 4. Configure health checks para PostgreSQL e Redis
-# 5. Ajuste recursos conforme sua VPS (2 vCPU, 8GB RAM)
-
-
-
-
