@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc *)",
-      "Bash(grep -n \"select: { id: true, name: true }\" \"c:\\\\Users\\\\Gustavo Teodozio\\\\Downloads\\\\bga\\\\bga\\\\backend\\\\src\\\\infra\\\\http\\\\controllers\\\\stand-updates.controller.ts\")"
+      "Bash(grep -n \"select: { id: true, name: true }\" \"c:\\\\Users\\\\Gustavo Teodozio\\\\Downloads\\\\bga\\\\bga\\\\backend\\\\src\\\\infra\\\\http\\\\controllers\\\\stand-updates.controller.ts\")",
+      "Bash(git commit *)"
     ]
   }
 }

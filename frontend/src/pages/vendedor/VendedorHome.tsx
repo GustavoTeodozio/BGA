@@ -74,7 +74,7 @@ export function VendedorHome() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
         {statCards.map((card, i) => (
           <div key={i} className="stat-card group animate-slide-up hover:scale-[1.02] transition-transform duration-300" style={{ animationDelay: `${i * 0.1}s` }}>
             <div className="relative z-10">

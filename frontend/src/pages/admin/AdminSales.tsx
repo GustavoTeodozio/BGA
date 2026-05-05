@@ -66,11 +66,11 @@ export function AdminSales() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans">Cliente</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans">Empresa</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans">Vendedor</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans hidden sm:table-cell">Empresa</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans hidden md:table-cell">Vendedor</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans">Valor</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans">Data</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans hidden lg:table-cell">Data</th>
                   <th className="text-right py-3 px-4 font-semibold text-gray-600 font-outer-sans"></th>
                 </tr>
               </thead>
@@ -78,8 +78,8 @@ export function AdminSales() {
                 {sales.map((s: any) => (
                   <tr key={s.id} className="hover:bg-gray-50 transition-colors">
                     <td className="py-3 px-4 font-medium text-gray-800">{s.clientName}</td>
-                    <td className="py-3 px-4 text-gray-500">{s.companyName || '—'}</td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 text-gray-500 hidden sm:table-cell">{s.companyName || '—'}</td>
+                    <td className="py-3 px-4 hidden md:table-cell">
                       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 rounded-full text-xs font-medium text-blue-700">
                         {s.closedBy?.name || '—'}
                       </span>
@@ -88,7 +88,7 @@ export function AdminSales() {
                     <td className="py-3 px-4">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_MAP[s.status]?.color}`}>{STATUS_MAP[s.status]?.label}</span>
                     </td>
-                    <td className="py-3 px-4 text-gray-500">{new Date(s.closedAt).toLocaleDateString('pt-BR')}</td>
+                    <td className="py-3 px-4 text-gray-500 hidden lg:table-cell">{new Date(s.closedAt).toLocaleDateString('pt-BR')}</td>
                     <td className="py-3 px-4 text-right">
                       <button onClick={async () => { const ok = await confirm({ title: 'Excluir venda', message: 'Excluir esta venda?', confirmText: 'Excluir' }); if (ok) deleteMut.mutate(s.id); }}
                         className="text-red-400 hover:text-red-600 transition-colors">

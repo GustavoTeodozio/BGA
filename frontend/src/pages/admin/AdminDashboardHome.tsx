@@ -151,7 +151,7 @@ export function AdminDashboardHome() {
         <div className="stat-card">
           <div className="relative z-10">
             <h3 className="text-sm font-medium text-gray-600 mb-4 font-outer-sans">Status dos Clientes</h3>
-            <div className="flex gap-3 items-center">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-center">
               {[
                 { label: 'Ativos', value: stats?.activeClients || 0, color: 'bg-green-500', text: 'text-green-700' },
                 { label: 'Pausados', value: stats?.pausedClients || 0, color: 'bg-yellow-500', text: 'text-yellow-700' },
@@ -171,16 +171,16 @@ export function AdminDashboardHome() {
 
             <div className="mt-6 pt-4 border-t border-gray-100">
               <h3 className="text-sm font-medium text-gray-600 mb-3 font-outer-sans">Resumo de Vendas</h3>
-              <div className="flex gap-3">
-                <div className="flex-1 text-center p-3 bg-gray-50 rounded-xl">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center p-3 bg-gray-50 rounded-xl">
                   <p className="text-xl font-bold text-gray-800 font-outer-sans">{sales.length}</p>
                   <p className="text-xs text-gray-500 font-outer-sans">Total</p>
                 </div>
-                <div className="flex-1 text-center p-3 bg-green-50 rounded-xl">
+                <div className="text-center p-3 bg-green-50 rounded-xl">
                   <p className="text-xl font-bold text-green-700 font-outer-sans">{closedCount}</p>
                   <p className="text-xs text-gray-500 font-outer-sans">Fechadas</p>
                 </div>
-                <div className="flex-1 text-center p-3 bg-blue-50 rounded-xl">
+                <div className="text-center p-3 bg-blue-50 rounded-xl">
                   <p className="text-xl font-bold text-blue-700 font-outer-sans">{inProgressCount}</p>
                   <p className="text-xs text-gray-500 font-outer-sans">Em andamento</p>
                 </div>
