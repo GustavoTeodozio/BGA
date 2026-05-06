@@ -81,8 +81,11 @@ CREATE INDEX IF NOT EXISTS "Sale_tenantId_idx" ON "Sale"("tenantId");
 CREATE INDEX IF NOT EXISTS "Sale_closedById_idx" ON "Sale"("closedById");
 
 -- Agora que Sale existe, adicionar FK de Budget -> Sale
-ALTER TABLE "Budget" ADD CONSTRAINT IF NOT EXISTS "Budget_saleId_fkey"
+DO $$ BEGIN
+  ALTER TABLE "Budget" ADD CONSTRAINT "Budget_saleId_fkey"
     FOREIGN KEY ("saleId") REFERENCES "Sale"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
 
 -- ── Project ──────────────────────────────────────────────────────────────────
 
