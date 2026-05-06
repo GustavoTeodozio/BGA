@@ -62,8 +62,11 @@ export async function getOpportunity(req: Request, res: Response) {
   const { tenantId, role, userId } = req.auth!;
   const { id } = req.params;
 
+  const where: any = { id };
+  if (tenantId) where.tenantId = tenantId;
+
   const opp = await prisma.opportunity.findFirst({
-    where: { id, tenantId },
+    where,
     include: { activities: { orderBy: { dueDate: 'asc' } } },
   });
 
@@ -77,7 +80,9 @@ export async function updateOpportunity(req: Request, res: Response) {
   const { tenantId, role, userId } = req.auth!;
   const { id } = req.params;
 
-  const existing = await prisma.opportunity.findFirst({ where: { id, tenantId } });
+  const oppWhere: any = { id };
+  if (tenantId) oppWhere.tenantId = tenantId;
+  const existing = await prisma.opportunity.findFirst({ where: oppWhere });
   if (!existing) throw new AppError('Oportunidade não encontrada', 404);
   if (role === 'VENDEDOR' && existing.assignedToId !== userId) throw new AppError('Acesso negado', 403);
 
@@ -117,7 +122,9 @@ export async function deleteOpportunity(req: Request, res: Response) {
   const { tenantId, role } = req.auth!;
   const { id } = req.params;
 
-  const existing = await prisma.opportunity.findFirst({ where: { id, tenantId } });
+  const delWhere: any = { id };
+  if (tenantId) delWhere.tenantId = tenantId;
+  const existing = await prisma.opportunity.findFirst({ where: delWhere });
   if (!existing) throw new AppError('Oportunidade não encontrada', 404);
   if (role !== 'ADMIN') throw new AppError('Acesso negado', 403);
 
@@ -131,7 +138,9 @@ export async function createActivity(req: Request, res: Response) {
   const { tenantId, userId, role } = req.auth!;
   const { opportunityId } = req.params;
 
-  const opp = await prisma.opportunity.findFirst({ where: { id: opportunityId, tenantId } });
+  const actOppWhere: any = { id: opportunityId };
+  if (tenantId) actOppWhere.tenantId = tenantId;
+  const opp = await prisma.opportunity.findFirst({ where: actOppWhere });
   if (!opp) throw new AppError('Oportunidade não encontrada', 404);
   if (role === 'VENDEDOR' && opp.assignedToId !== userId) throw new AppError('Acesso negado', 403);
 
@@ -157,7 +166,9 @@ export async function updateActivity(req: Request, res: Response) {
   const { tenantId, role, userId } = req.auth!;
   const { opportunityId, activityId } = req.params;
 
-  const opp = await prisma.opportunity.findFirst({ where: { id: opportunityId, tenantId } });
+  const updActWhere: any = { id: opportunityId };
+  if (tenantId) updActWhere.tenantId = tenantId;
+  const opp = await prisma.opportunity.findFirst({ where: updActWhere });
   if (!opp) throw new AppError('Oportunidade não encontrada', 404);
   if (role === 'VENDEDOR' && opp.assignedToId !== userId) throw new AppError('Acesso negado', 403);
 
@@ -182,7 +193,9 @@ export async function deleteActivity(req: Request, res: Response) {
   const { tenantId, role, userId } = req.auth!;
   const { opportunityId, activityId } = req.params;
 
-  const opp = await prisma.opportunity.findFirst({ where: { id: opportunityId, tenantId } });
+  const delActWhere: any = { id: opportunityId };
+  if (tenantId) delActWhere.tenantId = tenantId;
+  const opp = await prisma.opportunity.findFirst({ where: delActWhere });
   if (!opp) throw new AppError('Oportunidade não encontrada', 404);
   if (role === 'VENDEDOR' && opp.assignedToId !== userId) throw new AppError('Acesso negado', 403);
 
@@ -194,7 +207,9 @@ export async function completeActivity(req: Request, res: Response) {
   const { tenantId, role, userId } = req.auth!;
   const { opportunityId, activityId } = req.params;
 
-  const opp = await prisma.opportunity.findFirst({ where: { id: opportunityId, tenantId } });
+  const compActWhere: any = { id: opportunityId };
+  if (tenantId) compActWhere.tenantId = tenantId;
+  const opp = await prisma.opportunity.findFirst({ where: compActWhere });
   if (!opp) throw new AppError('Oportunidade não encontrada', 404);
   if (role === 'VENDEDOR' && opp.assignedToId !== userId) throw new AppError('Acesso negado', 403);
 
