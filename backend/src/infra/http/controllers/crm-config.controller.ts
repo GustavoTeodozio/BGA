@@ -24,7 +24,10 @@ export const DEFAULT_ACT_TYPES = [
 
 export async function getCrmConfig(req: Request, res: Response) {
   const { tenantId } = req.auth!;
-  const config = await prisma.crmConfig.findUnique({ where: { tenantId: tenantId! } });
+  if (!tenantId) {
+    return res.json({ stages: DEFAULT_STAGES, actTypes: DEFAULT_ACT_TYPES });
+  }
+  const config = await prisma.crmConfig.findUnique({ where: { tenantId } });
   return res.json({
     stages:   config ? (config.stages   as any[]) : DEFAULT_STAGES,
     actTypes: config ? (config.actTypes as any[]) : DEFAULT_ACT_TYPES,
@@ -33,12 +36,15 @@ export async function getCrmConfig(req: Request, res: Response) {
 
 export async function updateCrmConfig(req: Request, res: Response) {
   const { tenantId } = req.auth!;
+  if (!tenantId) {
+    return res.json({ stages: DEFAULT_STAGES, actTypes: DEFAULT_ACT_TYPES });
+  }
   const { stages, actTypes } = req.body as { stages?: any[]; actTypes?: any[] };
 
   const config = await prisma.crmConfig.upsert({
-    where:  { tenantId: tenantId! },
+    where:  { tenantId },
     create: {
-      tenantId: tenantId!,
+      tenantId,
       stages:   stages   ?? DEFAULT_STAGES,
       actTypes: actTypes ?? DEFAULT_ACT_TYPES,
     },

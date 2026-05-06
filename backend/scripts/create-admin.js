@@ -23,16 +23,27 @@ async function createAdmin() {
 
     if (existingUser) {
       console.log(`⚠️  Usuário com email ${email} já existe!`);
-      console.log(`   Atualizando senha...\n`);
-      
+      console.log(`   Atualizando senha e tenantId...\n`);
+
       const hashedPassword = await bcrypt.hash(password, 12);
-      
+
+      // Garantir que o tenant Sistema existe
+      let defaultTenant = await prisma.tenant.findFirst({ where: { name: 'Sistema' } });
+      if (!defaultTenant) {
+        defaultTenant = await prisma.tenant.create({
+          data: { name: 'Sistema', slug: 'sistema', isActive: true },
+        });
+        console.log('✅ Tenant padrão criado');
+      }
+
       await prisma.user.update({
         where: { id: existingUser.id },
-        data: { password: hashedPassword },
+        data: { password: hashedPassword, tenantId: defaultTenant.id, role: 'ADMIN', isActive: true },
       });
-      
-      console.log('✅ Senha do administrador atualizada com sucesso!\n');
+
+      console.log('✅ Administrador atualizado com sucesso!\n');
+      console.log(`   Email: ${email}`);
+      console.log(`   TenantId: ${defaultTenant.id}\n`);
       await prisma.$disconnect();
       process.exit(0);
     }

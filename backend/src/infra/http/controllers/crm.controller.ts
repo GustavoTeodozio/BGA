@@ -7,7 +7,7 @@ import { AppError } from '../../../shared/errors/AppError';
 export async function listOpportunities(req: Request, res: Response) {
   const { tenantId, role, userId } = req.auth!;
 
-  const where: any = { tenantId };
+  const where: any = tenantId ? { tenantId } : {};
   if (role === 'VENDEDOR') where.assignedToId = userId;
 
   const stage = req.query.stage as string | undefined;
@@ -24,6 +24,7 @@ export async function listOpportunities(req: Request, res: Response) {
 
 export async function createOpportunity(req: Request, res: Response) {
   const { tenantId: rawTenantId, userId } = req.auth!;
+  if (!rawTenantId) throw new AppError('Tenant não definido', 400);
   const tenantId = rawTenantId as string;
 
   const {
@@ -210,7 +211,8 @@ export async function completeActivity(req: Request, res: Response) {
 export async function getAgenda(req: Request, res: Response) {
   const { tenantId, role, userId } = req.auth!;
 
-  const oppWhere: any = { tenantId, stage: { notIn: ['GANHO', 'PERDIDO'] } };
+  const oppWhere: any = { stage: { notIn: ['GANHO', 'PERDIDO'] } };
+  if (tenantId) oppWhere.tenantId = tenantId;
   if (role === 'VENDEDOR') oppWhere.assignedToId = userId;
 
   const opps = await prisma.opportunity.findMany({ where: oppWhere, select: { id: true } });
@@ -249,7 +251,7 @@ export async function getAgenda(req: Request, res: Response) {
 export async function getActivityHistory(req: Request, res: Response) {
   const { tenantId, role, userId } = req.auth!;
 
-  const oppWhere: any = { tenantId };
+  const oppWhere: any = tenantId ? { tenantId } : {};
   if (role === 'VENDEDOR') oppWhere.assignedToId = userId;
 
   const opps = await prisma.opportunity.findMany({ where: oppWhere, select: { id: true } });
@@ -306,7 +308,7 @@ export async function listLinkedOpportunities(req: Request, res: Response) {
 export async function getCRMStats(req: Request, res: Response) {
   const { tenantId, role, userId } = req.auth!;
 
-  const where: any = { tenantId };
+  const where: any = tenantId ? { tenantId } : {};
   if (role === 'VENDEDOR') where.assignedToId = userId;
 
   const opps = await prisma.opportunity.findMany({ where, select: { stage: true, value: true } });
