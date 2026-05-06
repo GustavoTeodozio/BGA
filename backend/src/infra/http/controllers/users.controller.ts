@@ -29,6 +29,22 @@ export const listUsers = async (req: Request, res: Response) => {
   return res.json(users);
 };
 
+export const listTeamMembers = async (req: Request, res: Response) => {
+  const { userId } = req.auth!;
+
+  const members = await prisma.user.findMany({
+    where: {
+      isActive: true,
+      role: { in: ['VENDEDOR', 'PROJETISTA', 'ADMIN'] },
+      id: { not: userId },
+    },
+    select: { id: true, name: true, role: true },
+    orderBy: { name: 'asc' },
+  });
+
+  return res.json(members);
+};
+
 export const listAdmins = async (req: Request, res: Response) => {
   try {
     const admins = await prisma.user.findMany({

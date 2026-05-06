@@ -4,7 +4,7 @@ import { ensureAuthenticated, authorizeRoles } from '../middlewares/auth';
 import asyncHandler from '../middlewares/async-handler';
 import upload from '../middlewares/upload';
 import { ceniqChat } from '../controllers/ceniq.controller';
-import { updateProfile } from '../controllers/users.controller';
+import { updateProfile, listTeamMembers } from '../controllers/users.controller';
 import {
   listNotes,
   getNote,
@@ -49,6 +49,9 @@ projetistaRoutes.patch('/projects/:projectId', asyncHandler(updateProject));
 projetistaRoutes.delete('/projects/:projectId', asyncHandler(deleteProject));
 projetistaRoutes.post('/projects/:projectId/files', upload.single('file'), asyncHandler(uploadFile));
 projetistaRoutes.delete('/projects/files/:fileId', asyncHandler(deleteFile));
+
+// Membros da equipe (para compartilhamento de notas)
+projetistaRoutes.get('/team-members', asyncHandler(listTeamMembers));
 
 // Ceniq AI stand design
 projetistaRoutes.post('/ceniq', asyncHandler(ceniqChat));

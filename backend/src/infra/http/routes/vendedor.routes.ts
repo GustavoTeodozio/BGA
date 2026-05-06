@@ -43,7 +43,7 @@ import {
   updatePositions,
 } from '../controllers/task.controller';
 import { listClients } from '../controllers/clients.controller';
-import { updateProfile } from '../controllers/users.controller';
+import { updateProfile, listTeamMembers } from '../controllers/users.controller';
 import { registerClient } from '../controllers/auth.controller';
 import {
   listStages,
@@ -107,6 +107,9 @@ vendedorRoutes.post('/tasks/positions', asyncHandler(updatePositions));
 // Clients (listar e criar — vendedor pode cadastrar clientes)
 vendedorRoutes.get('/clients', asyncHandler(listClients));
 vendedorRoutes.post('/clients', upload.array('logos', 10), asyncHandler(registerClient));
+
+// Membros da equipe (para compartilhamento de notas)
+vendedorRoutes.get('/team-members', asyncHandler(listTeamMembers));
 
 // Stand Progress Tracker
 vendedorRoutes.get('/stand-updates/stages', asyncHandler(listStages));

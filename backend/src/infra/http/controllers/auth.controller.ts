@@ -65,10 +65,13 @@ export const registerClient = async (req: Request, res: Response) => {
       logoUrl = logoUrls[0];
     }
 
+    const createdById = (req as any).auth?.userId ?? undefined;
+
     const result = await authService.registerClient({
       ...body,
       logoUrl,
       logoUrls,
+      createdById,
     });
     return res.status(201).json(result);
   } catch (error: any) {

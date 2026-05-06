@@ -6,7 +6,11 @@
       "Bash(git commit *)",
       "Bash(git filter-branch *)",
       "Bash(git stash *)",
-      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter \"git rm --cached --ignore-unmatch backend/data/settings.json\" --prune-empty --tag-name-filter cat -- --all)"
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter \"git rm --cached --ignore-unmatch backend/data/settings.json\" --prune-empty --tag-name-filter cat -- --all)",
+      "Bash(ipconfig)",
+      "Bash(findstr /i \"IPv4\")",
+      "Bash(docker --version)",
+      "Bash(docker-compose -f docker-compose.dev.yml up -d)"
     ]
   }
 }

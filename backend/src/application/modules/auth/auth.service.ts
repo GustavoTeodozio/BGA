@@ -35,6 +35,7 @@ export interface RegisterClientInput {
   password: string;
   logoUrl?: string;
   logoUrls?: string[];
+  createdById?: string;
 }
 
 export interface RefreshInput {
@@ -165,6 +166,7 @@ export class AuthService {
           logoUrl: input.logoUrl,
           logoUrls: input.logoUrls ?? [],
           activeSince: new Date(),
+          createdById: input.createdById ?? null,
         },
       });
 

@@ -209,6 +209,7 @@ model User {
   closedSales      Sale[]             @relation("SaleClosedBy")
   projects         Project[]          @relation("ProjectDesigner")
   standUpdates     StandUpdate[]      @relation("StandUpdateAuthor")
+  createdClients   ClientProfile[]    @relation("ClientCreatedBy")
 }
 
 model Session {
@@ -250,6 +251,8 @@ model ClientProfile {
   deactivatedAt         DateTime?
   metaApiKey            String?
   onboardingCompleted   Boolean      @default(false)
+  createdById           String?
+  createdBy             User?        @relation("ClientCreatedBy", fields: [createdById], references: [id])
   createdAt             DateTime     @default(now())
   updatedAt             DateTime     @updatedAt
 
@@ -628,18 +631,19 @@ model TaskMetrics {
 }
 
 model Note {
-  id          String   @id @default(uuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
-  title       String
-  content     String   @default("")
-  color       String   @default("#ffffff")
-  tags        String?
-  isPinned    Boolean  @default(false)
-  createdById String
-  createdBy   User     @relation("NoteCreatedBy", fields: [createdById], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  title          String
+  content        String   @default("")
+  color          String   @default("#ffffff")
+  tags           String?
+  isPinned       Boolean  @default(false)
+  sharedWithIds  String[] @default([])
+  createdById    String
+  createdBy      User     @relation("NoteCreatedBy", fields: [createdById], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([tenantId])
   @@index([createdById])

@@ -5,8 +5,14 @@ import { useDialog } from '../ConfirmDialog';
 
 const COLORS = ['#ffffff', '#fef3c7', '#dcfce7', '#dbeafe', '#fce7f3', '#f3e8ff', '#fed7d7', '#e2e8f0'];
 
+const ROLE_LABEL: Record<string, string> = {
+  VENDEDOR: 'Vendedor',
+  PROJETISTA: 'Projetista',
+  ADMIN: 'Admin',
+};
+
 interface NotesPageProps {
-  apiPrefix: string; // e.g. '/vendedor' or '/projetista' or '/admin'
+  apiPrefix: string;
 }
 
 export function NotesPage({ apiPrefix }: NotesPageProps) {
@@ -15,7 +21,7 @@ export function NotesPage({ apiPrefix }: NotesPageProps) {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ title: '', content: '', color: '#ffffff', tags: '' });
+  const [form, setForm] = useState({ title: '', content: '', color: '#ffffff', tags: '', sharedWithIds: [] as string[] });
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes', apiPrefix, search],
@@ -24,6 +30,18 @@ export function NotesPage({ apiPrefix }: NotesPageProps) {
       if (search) params.search = search;
       const r = await api.get(`${apiPrefix}/notes`, { params });
       return r.data;
+    },
+  });
+
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ['team-members', apiPrefix],
+    queryFn: async () => {
+      try {
+        const r = await api.get(`${apiPrefix}/team-members`);
+        return r.data;
+      } catch {
+        return [];
+      }
     },
   });
 
@@ -49,17 +67,26 @@ export function NotesPage({ apiPrefix }: NotesPageProps) {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ title: '', content: '', color: '#ffffff', tags: '' });
+    setForm({ title: '', content: '', color: '#ffffff', tags: '', sharedWithIds: [] });
     setShowModal(true);
   };
 
   const openEdit = (note: any) => {
     setEditing(note);
-    setForm({ title: note.title, content: note.content, color: note.color, tags: note.tags || '' });
+    setForm({ title: note.title, content: note.content, color: note.color, tags: note.tags || '', sharedWithIds: note.sharedWithIds || [] });
     setShowModal(true);
   };
 
   const closeModal = () => { setShowModal(false); setEditing(null); };
+
+  const toggleShare = (memberId: string) => {
+    setForm((prev) => ({
+      ...prev,
+      sharedWithIds: prev.sharedWithIds.includes(memberId)
+        ? prev.sharedWithIds.filter((id) => id !== memberId)
+        : [...prev.sharedWithIds, memberId],
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,7 +141,6 @@ export function NotesPage({ apiPrefix }: NotesPageProps) {
               style={{ backgroundColor: note.color || '#ffffff' }}
               onClick={() => openEdit(note)}
             >
-              {/* Pin indicator */}
               {note.isPinned && (
                 <div className="absolute top-2 right-2 text-amber-500">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" /></svg>
@@ -130,6 +156,16 @@ export function NotesPage({ apiPrefix }: NotesPageProps) {
                     {note.tags.split(',').map((tag: string, i: number) => (
                       <span key={i} className="px-2 py-0.5 bg-black/5 rounded-full text-[10px] font-medium text-gray-600">{tag.trim()}</span>
                     ))}
+                  </div>
+                )}
+
+                {/* Compartilhada com */}
+                {note.sharedWithIds?.length > 0 && (
+                  <div className="flex items-center gap-1 mt-2">
+                    <svg className="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                    <span className="text-[10px] text-blue-500">Compartilhada com {note.sharedWithIds.length}</span>
                   </div>
                 )}
 
@@ -193,6 +229,29 @@ export function NotesPage({ apiPrefix }: NotesPageProps) {
                   <input type="text" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="urgente, cliente-x, montagem"
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-outer-sans" />
                 </div>
+
+                {/* Compartilhar com */}
+                {teamMembers.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 font-outer-sans">Compartilhar com</label>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {teamMembers.map((member: any) => (
+                        <label key={member.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={form.sharedWithIds.includes(member.id)}
+                            onChange={() => toggleShare(member.id)}
+                            className="w-4 h-4 text-blue-600 rounded border-gray-300"
+                          />
+                          <div>
+                            <span className="text-sm font-medium text-gray-700 font-outer-sans">{member.name}</span>
+                            <span className="ml-2 text-xs text-gray-400 font-outer-sans">{ROLE_LABEL[member.role] ?? member.role}</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
                 <button type="button" onClick={closeModal} className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors font-outer-sans">Cancelar</button>

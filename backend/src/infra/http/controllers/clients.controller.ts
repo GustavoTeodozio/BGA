@@ -5,17 +5,25 @@ import AppError from '../../../shared/errors/AppError';
 
 export const listClients = async (req: Request, res: Response) => {
   try {
-    // Buscar todos os tenants e filtrar apenas os que têm ClientProfile
-    // (exclui o tenant do admin que não tem ClientProfile)
+    const { role, userId } = req.auth!;
+
     const allTenants = await prisma.tenant.findMany({
       include: {
-        clients: true,
+        clients: {
+          include: {
+            createdBy: { select: { id: true, name: true } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    // Filtrar apenas tenants que têm ClientProfile (clientes reais)
-    const clients = allTenants.filter((tenant) => tenant.clients !== null);
+    let clients = allTenants.filter((tenant) => tenant.clients !== null);
+
+    // Vendedor vê apenas os clientes que ele cadastrou
+    if (role === 'VENDEDOR') {
+      clients = clients.filter((tenant) => tenant.clients?.createdById === userId);
+    }
 
     return res.json(clients);
   } catch (error: any) {

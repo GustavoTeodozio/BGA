@@ -9,6 +9,7 @@ const createSchema = z.object({
   color: z.string().default('#ffffff'),
   tags: z.string().optional(),
   isPinned: z.boolean().default(false),
+  sharedWithIds: z.array(z.string()).default([]),
 });
 
 const updateSchema = z.object({
@@ -17,6 +18,7 @@ const updateSchema = z.object({
   color: z.string().optional(),
   tags: z.string().nullable().optional(),
   isPinned: z.boolean().optional(),
+  sharedWithIds: z.array(z.string()).optional(),
 });
 
 export const listNotes = async (req: Request, res: Response) => {
@@ -25,12 +27,15 @@ export const listNotes = async (req: Request, res: Response) => {
 
   const where: any = {};
 
-  // Admin vê todas as do tenant, outros veem apenas as próprias
+  // Admin vê todas do tenant; outros veem as próprias + as compartilhadas com eles
   if (role === 'ADMIN') {
     if (tenantId) where.tenantId = tenantId;
   } else {
-    where.createdById = userId;
     if (tenantId) where.tenantId = tenantId;
+    where.OR = [
+      { createdById: userId },
+      { sharedWithIds: { has: userId } },
+    ];
   }
 
   if (search) {
@@ -59,7 +64,8 @@ export const getNote = async (req: Request, res: Response) => {
   });
 
   if (!note) throw new AppError('Anotação não encontrada', 404);
-  if (role !== 'ADMIN' && note.createdById !== userId) {
+  const isSharedWith = note.sharedWithIds?.includes(userId);
+  if (role !== 'ADMIN' && note.createdById !== userId && !isSharedWith) {
     throw new AppError('Acesso negado', 403);
   }
 
@@ -74,7 +80,12 @@ export const createNote = async (req: Request, res: Response) => {
 
   const note = await prisma.note.create({
     data: {
-      ...body,
+      title: body.title,
+      content: body.content,
+      color: body.color,
+      tags: body.tags,
+      isPinned: body.isPinned,
+      sharedWithIds: body.sharedWithIds,
       tenantId,
       createdById: userId,
     },
