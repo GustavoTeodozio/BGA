@@ -126,7 +126,8 @@ export async function deleteOpportunity(req: Request, res: Response) {
   if (tenantId) delWhere.tenantId = tenantId;
   const existing = await prisma.opportunity.findFirst({ where: delWhere });
   if (!existing) throw new AppError('Oportunidade não encontrada', 404);
-  if (role !== 'ADMIN') throw new AppError('Acesso negado', 403);
+  const { userId } = req.auth!;
+  if (role === 'VENDEDOR' && existing.assignedToId !== userId) throw new AppError('Acesso negado', 403);
 
   await prisma.opportunity.delete({ where: { id } });
   return res.status(204).send();
