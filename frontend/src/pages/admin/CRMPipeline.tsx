@@ -769,7 +769,7 @@ export function CRMPipeline() {
           opp={modalOpp === 'new' ? null : modalOpp}
           onClose={() => setModalOpp(null)}
           onSave={handleSave}
-          onDelete={isAdmin && modalOpp !== 'new' ? handleDelete : undefined}
+          onDelete={modalOpp !== 'new' && (isAdmin || modalOpp?.assignedToId === user?.id) ? handleDelete : undefined}
           onAddActivity={handleAddActivity}
           onCompleteActivity={handleCompleteActivity}
           clients={isAdmin ? clients : []}
