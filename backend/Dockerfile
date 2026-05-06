@@ -11,10 +11,10 @@ RUN npm ci
 
 COPY . .
 
-# Build e gerar Prisma Client (DATABASE_URL só precisa existir, não precisa ser válida)
+# Gerar Prisma Client ANTES do build para que o TypeScript encontre os tipos
 ENV DATABASE_URL=$DATABASE_URL
-RUN npm run build
 RUN npm run prisma:generate
+RUN npm run build
 
 FROM node:20-alpine AS runner
 
