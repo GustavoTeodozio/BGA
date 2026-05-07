@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { ensureAuthenticated, authorizeRoles } from '../middlewares/auth';
 import asyncHandler from '../middlewares/async-handler';
 import upload from '../middlewares/upload';
+import prisma from '../../../config/prisma';
 import {
   listNotes,
   getNote,
@@ -109,11 +110,10 @@ vendedorRoutes.get('/clients', asyncHandler(listClients));
 vendedorRoutes.post('/clients', upload.array('logos', 10), asyncHandler(registerClient));
 vendedorRoutes.patch('/clients/:clientId/profile', asyncHandler(async (req, res, next) => {
   const { userId } = req.auth!;
-  const { clientId } = req.params;
-  const tenant = await import('../../../config/prisma').then(m => m.default.tenant.findUnique({
-    where: { id: clientId },
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: req.params.clientId },
     include: { clients: { select: { createdById: true } } },
-  }));
+  });
   if (!tenant?.clients || tenant.clients.createdById !== userId) {
     return res.status(403).json({ message: 'Acesso negado' });
   }
@@ -121,11 +121,10 @@ vendedorRoutes.patch('/clients/:clientId/profile', asyncHandler(async (req, res,
 }), asyncHandler(updateClientProfile));
 vendedorRoutes.delete('/clients/:clientId', asyncHandler(async (req, res, next) => {
   const { userId } = req.auth!;
-  const { clientId } = req.params;
-  const tenant = await import('../../../config/prisma').then(m => m.default.tenant.findUnique({
-    where: { id: clientId },
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: req.params.clientId },
     include: { clients: { select: { createdById: true } } },
-  }));
+  });
   if (!tenant?.clients || tenant.clients.createdById !== userId) {
     return res.status(403).json({ message: 'Acesso negado' });
   }
