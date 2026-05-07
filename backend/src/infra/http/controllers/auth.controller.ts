@@ -23,7 +23,7 @@ const registerSchema = z.object({
   plan: z.enum(['START', 'MASTER', 'PREMIUM', 'CUSTOM']).optional(),
   customPlanDescription: z.string().optional(),
   monthlyValue: z.preprocess((v) => (v !== '' && v !== undefined ? Number(v) : undefined), z.number().positive().optional()),
-  contractMonths: z.preprocess((v) => (v !== '' && v !== undefined ? Number(v) : undefined), z.number().int().positive().optional()),
+  contractMonths: z.string().optional(),
   dueDate: z.preprocess((v) => (v ? new Date(v as string) : undefined), z.date().optional()),
   password: z.string().min(6),
 });

@@ -30,7 +30,7 @@ export interface RegisterClientInput {
   plan?: 'START' | 'MASTER' | 'PREMIUM' | 'CUSTOM';
   customPlanDescription?: string;
   monthlyValue?: number;
-  contractMonths?: number;
+  contractMonths?: string;
   dueDate?: Date;
   password: string;
   logoUrl?: string;

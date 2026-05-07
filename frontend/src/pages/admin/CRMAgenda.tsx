@@ -280,6 +280,9 @@ function NewActivityModal({ onClose, onSaved, actTypes }: { onClose: () => void;
   const [oppSearch, setOppSearch] = useState('');
   const [selectedOpp, setSelectedOpp] = useState<Opportunity | null>(null);
   const [showOppList, setShowOppList] = useState(false);
+  const [linkOpp, setLinkOpp] = useState(false);
+  const [newOppTitle, setNewOppTitle] = useState('');
+  const [newOppClient, setNewOppClient] = useState('');
   const [type, setType] = useState(actTypes[0]?.key ?? 'LIGACAO');
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
@@ -298,16 +301,28 @@ function NewActivityModal({ onClose, onSaved, actTypes }: { onClose: () => void;
   );
 
   const handleSave = async () => {
-    if (!selectedOpp) { setError('Selecione uma oportunidade.'); return; }
     if (!title.trim()) { setError('Informe o título da atividade.'); return; }
+    if (linkOpp && !selectedOpp) { setError('Selecione uma oportunidade.'); return; }
+    if (!linkOpp && !newOppClient.trim()) { setError('Informe o nome do cliente.'); return; }
     setError('');
     setSaving(true);
     try {
+      let oppId: string;
+      if (linkOpp && selectedOpp) {
+        oppId = selectedOpp.id;
+      } else {
+        const oppTitle = newOppTitle.trim() || title.trim();
+        const res = await api.post('/crm/opportunities', {
+          title: oppTitle,
+          clientName: newOppClient.trim(),
+        });
+        oppId = res.data.id;
+      }
       let dueDateISO: string | undefined;
       if (dueDate) {
         dueDateISO = dueTime ? `${dueDate}T${dueTime}:00` : `${dueDate}T00:00:00`;
       }
-      await api.post(`/crm/opportunities/${selectedOpp.id}/activities`, {
+      await api.post(`/crm/opportunities/${oppId}/activities`, {
         type,
         title: title.trim(),
         notes: notes.trim() || undefined,
@@ -373,50 +388,109 @@ function NewActivityModal({ onClose, onSaved, actTypes }: { onClose: () => void;
             />
           </div>
 
-          {/* Oportunidade */}
-          <div style={{ marginBottom: 14, position: 'relative' }}>
-            <label className="ag-label">Oportunidade <span style={{ color: '#ef4444' }}>*</span></label>
-            {selectedOpp ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', border: '1.5px solid #710505', borderRadius: 10, background: '#fff5f5' }}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', margin: 0 }}>{selectedOpp.title}</p>
-                  <p style={{ fontSize: 11, color: '#94a3b8', margin: 0 }}>{selectedOpp.clientName}</p>
-                </div>
-                <button onClick={() => { setSelectedOpp(null); setOppSearch(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
-                  <svg style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
+          {/* Toggle vincular oportunidade */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f8fafc', borderRadius: 10, border: '1.5px solid #e2e8f0' }}>
+              <button
+                type="button"
+                onClick={() => { setLinkOpp(!linkOpp); setSelectedOpp(null); setOppSearch(''); }}
+                style={{
+                  width: 38, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer', padding: 2,
+                  background: linkOpp ? '#710505' : '#cbd5e1',
+                  transition: 'background 0.2s',
+                  display: 'flex', alignItems: 'center',
+                }}
+              >
+                <span style={{
+                  display: 'block', width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                  transform: linkOpp ? 'translateX(16px)' : 'translateX(0)',
+                  transition: 'transform 0.2s',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                }} />
+              </button>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', margin: 0 }}>
+                  Vincular a uma oportunidade existente
+                </p>
+                <p style={{ fontSize: 11, color: '#94a3b8', margin: '1px 0 0' }}>
+                  {linkOpp ? 'Selecione uma oportunidade do pipeline' : 'Será criada uma nova oportunidade automaticamente'}
+                </p>
               </div>
-            ) : (
-              <>
-                <input
-                  className="ag-input"
-                  placeholder="Buscar oportunidade ou cliente..."
-                  value={oppSearch}
-                  onChange={e => { setOppSearch(e.target.value); setShowOppList(true); }}
-                  onFocus={() => setShowOppList(true)}
-                />
-                {showOppList && (
-                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', zIndex: 10, maxHeight: 200, overflowY: 'auto', marginTop: 4 }}>
-                    {filteredOpps.length === 0 ? (
-                      <p style={{ padding: '12px 14px', fontSize: 13, color: '#94a3b8', margin: 0 }}>Nenhuma oportunidade encontrada.</p>
-                    ) : filteredOpps.map(o => (
-                      <button
-                        key={o.id}
-                        type="button"
-                        onClick={() => { setSelectedOpp(o); setShowOppList(false); setOppSearch(''); }}
-                        style={{ width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px solid #f8fafc' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                      >
-                        <p style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', margin: 0 }}>{o.title}</p>
-                        <p style={{ fontSize: 11, color: '#94a3b8', margin: 0 }}>{o.clientName}</p>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
+            </div>
           </div>
+
+          {/* Vincular oportunidade existente */}
+          {linkOpp && (
+            <div style={{ marginBottom: 14, position: 'relative' }}>
+              <label className="ag-label">Oportunidade <span style={{ color: '#ef4444' }}>*</span></label>
+              {selectedOpp ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', border: '1.5px solid #710505', borderRadius: 10, background: '#fff5f5' }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', margin: 0 }}>{selectedOpp.title}</p>
+                    <p style={{ fontSize: 11, color: '#94a3b8', margin: 0 }}>{selectedOpp.clientName}</p>
+                  </div>
+                  <button onClick={() => { setSelectedOpp(null); setOppSearch(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+                    <svg style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    className="ag-input"
+                    placeholder="Buscar oportunidade ou cliente..."
+                    value={oppSearch}
+                    onChange={e => { setOppSearch(e.target.value); setShowOppList(true); }}
+                    onFocus={() => setShowOppList(true)}
+                  />
+                  {showOppList && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', zIndex: 10, maxHeight: 200, overflowY: 'auto', marginTop: 4 }}>
+                      {filteredOpps.length === 0 ? (
+                        <p style={{ padding: '12px 14px', fontSize: 13, color: '#94a3b8', margin: 0 }}>Nenhuma oportunidade encontrada.</p>
+                      ) : filteredOpps.map(o => (
+                        <button
+                          key={o.id}
+                          type="button"
+                          onClick={() => { setSelectedOpp(o); setShowOppList(false); setOppSearch(''); }}
+                          style={{ width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px solid #f8fafc' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                        >
+                          <p style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', margin: 0 }}>{o.title}</p>
+                          <p style={{ fontSize: 11, color: '#94a3b8', margin: 0 }}>{o.clientName}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Criar nova oportunidade automaticamente */}
+          {!linkOpp && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label className="ag-label">Cliente <span style={{ color: '#ef4444' }}>*</span></label>
+                  <input
+                    className="ag-input"
+                    placeholder="Nome do cliente"
+                    value={newOppClient}
+                    onChange={e => setNewOppClient(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="ag-label">Oportunidade <span style={{ color: '#94a3b8', fontWeight: 400 }}>(opcional)</span></label>
+                  <input
+                    className="ag-input"
+                    placeholder="Usa o título se vazio"
+                    value={newOppTitle}
+                    onChange={e => setNewOppTitle(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Data e hora */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>

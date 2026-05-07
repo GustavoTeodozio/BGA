@@ -243,7 +243,7 @@ model ClientProfile {
   plan                  ClientPlan   @default(START)
   customPlanDescription String?
   monthlyValue          Decimal?
-  contractMonths        Int?
+  contractMonths        String?
   dueDate               DateTime?
   clientStatus          ClientStatus @default(ACTIVE)
   statusReason          String?
