@@ -42,7 +42,7 @@ import {
   updateMetrics,
   updatePositions,
 } from '../controllers/task.controller';
-import { listClients } from '../controllers/clients.controller';
+import { listClients, updateClientProfile, deleteClient } from '../controllers/clients.controller';
 import { updateProfile, listTeamMembers } from '../controllers/users.controller';
 import { registerClient } from '../controllers/auth.controller';
 import {
@@ -104,9 +104,33 @@ vendedorRoutes.delete('/tasks/attachments/:attachmentId', asyncHandler(deleteAtt
 vendedorRoutes.patch('/tasks/:taskId/metrics', asyncHandler(updateMetrics));
 vendedorRoutes.post('/tasks/positions', asyncHandler(updatePositions));
 
-// Clients (listar e criar — vendedor pode cadastrar clientes)
+// Clients (listar, criar, editar e deletar — vendedor só acessa seus próprios clientes)
 vendedorRoutes.get('/clients', asyncHandler(listClients));
 vendedorRoutes.post('/clients', upload.array('logos', 10), asyncHandler(registerClient));
+vendedorRoutes.patch('/clients/:clientId/profile', asyncHandler(async (req, res, next) => {
+  const { userId } = req.auth!;
+  const { clientId } = req.params;
+  const tenant = await import('../../../config/prisma').then(m => m.default.tenant.findUnique({
+    where: { id: clientId },
+    include: { clients: { select: { createdById: true } } },
+  }));
+  if (!tenant?.clients || tenant.clients.createdById !== userId) {
+    return res.status(403).json({ message: 'Acesso negado' });
+  }
+  return next();
+}), asyncHandler(updateClientProfile));
+vendedorRoutes.delete('/clients/:clientId', asyncHandler(async (req, res, next) => {
+  const { userId } = req.auth!;
+  const { clientId } = req.params;
+  const tenant = await import('../../../config/prisma').then(m => m.default.tenant.findUnique({
+    where: { id: clientId },
+    include: { clients: { select: { createdById: true } } },
+  }));
+  if (!tenant?.clients || tenant.clients.createdById !== userId) {
+    return res.status(403).json({ message: 'Acesso negado' });
+  }
+  return next();
+}), asyncHandler(deleteClient));
 
 // Membros da equipe (para compartilhamento de notas)
 vendedorRoutes.get('/team-members', asyncHandler(listTeamMembers));

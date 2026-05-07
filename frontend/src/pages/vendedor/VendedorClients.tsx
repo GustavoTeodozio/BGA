@@ -36,11 +36,25 @@ const emptyForm = {
   logos: [] as File[],
 };
 
+const emptyEditForm = {
+  businessName: '',
+  cpfCnpj: '',
+  mainContact: '',
+  mainEmail: '',
+  mainPhone: '',
+  address: '',
+  contractMonths: '',
+  dueDate: '',
+};
+
 export function VendedorClients() {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [logoPreviews, setLogoPreviews] = useState<string[]>([]);
   const [search, setSearch] = useState('');
+  const [editingClient, setEditingClient] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState(emptyEditForm);
+  const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
   const qc = useQueryClient();
 
   const { data: clients = [], isLoading } = useQuery({
@@ -77,9 +91,61 @@ export function VendedorClients() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ clientId, data }: { clientId: string; data: typeof editForm }) => {
+      const r = await api.patch(`/vendedor/clients/${clientId}/profile`, {
+        businessName: data.businessName || undefined,
+        cpfCnpj: data.cpfCnpj || undefined,
+        mainContact: data.mainContact || undefined,
+        mainEmail: data.mainEmail || undefined,
+        mainPhone: data.mainPhone || undefined,
+        address: data.address || undefined,
+        contractMonths: data.contractMonths || undefined,
+        dueDate: data.dueDate || undefined,
+      });
+      return r.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['vendedor', 'clients'] });
+      setEditingClient(null);
+      setEditForm(emptyEditForm);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (clientId: string) => {
+      await api.delete(`/vendedor/clients/${clientId}`);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['vendedor', 'clients'] });
+      setDeletingClientId(null);
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createMutation.mutate(formData);
+  };
+
+  const openEdit = (client: any) => {
+    const p = client.clients;
+    setEditForm({
+      businessName: p?.businessName ?? '',
+      cpfCnpj: p?.cpfCnpj ?? '',
+      mainContact: p?.mainContact ?? '',
+      mainEmail: p?.mainEmail ?? '',
+      mainPhone: p?.mainPhone ?? '',
+      address: p?.address ?? '',
+      contractMonths: p?.contractMonths ?? '',
+      dueDate: p?.dueDate ? new Date(p.dueDate).toISOString().split('T')[0] : '',
+    });
+    setEditingClient(client);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingClient) return;
+    updateMutation.mutate({ clientId: editingClient.id, data: editForm });
   };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -399,10 +465,142 @@ export function VendedorClients() {
                       Cadastrado em: {client.createdAt ? new Date(client.createdAt).toLocaleDateString('pt-BR') : 'N/A'}
                     </p>
                   </div>
+
+                  {/* Ações */}
+                  <div className="flex flex-col gap-2 ml-2 flex-shrink-0">
+                    <button
+                      onClick={() => openEdit(client)}
+                      className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all"
+                      title="Editar cliente"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => setDeletingClientId(client.id)}
+                      className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all"
+                      title="Excluir cliente"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Modal Editar */}
+      {editingClient && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) { setEditingClient(null); } }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-slide-up">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <div>
+                <h2 className="text-base font-bold text-gray-800 font-outer-sans">Editar Cliente</h2>
+                <p className="text-xs text-gray-400 font-outer-sans mt-0.5">{editingClient.clients?.businessName}</p>
+              </div>
+              <button onClick={() => setEditingClient(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <form onSubmit={handleEditSubmit} className="p-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 font-outer-sans">Nome / Razão social</label>
+                  <input type="text" value={editForm.businessName} onChange={e => setEditForm({ ...editForm, businessName: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-outer-sans" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 font-outer-sans">CPF / CNPJ</label>
+                  <input type="text" value={editForm.cpfCnpj} onChange={e => setEditForm({ ...editForm, cpfCnpj: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-outer-sans" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 font-outer-sans">Responsável</label>
+                  <input type="text" value={editForm.mainContact} onChange={e => setEditForm({ ...editForm, mainContact: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-outer-sans" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 font-outer-sans">E-mail</label>
+                  <input type="email" value={editForm.mainEmail} onChange={e => setEditForm({ ...editForm, mainEmail: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-outer-sans" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 font-outer-sans">Telefone</label>
+                  <input type="tel" value={editForm.mainPhone} onChange={e => setEditForm({ ...editForm, mainPhone: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-outer-sans" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 font-outer-sans">Evento / Feira</label>
+                  <input type="text" value={editForm.contractMonths} onChange={e => setEditForm({ ...editForm, contractMonths: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-outer-sans"
+                    placeholder="Ex: Agrishow 2025" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1 font-outer-sans">Endereço</label>
+                  <input type="text" value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-outer-sans" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 font-outer-sans">Data do evento</label>
+                  <input type="date" value={editForm.dueDate} onChange={e => setEditForm({ ...editForm, dueDate: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-outer-sans" />
+                </div>
+              </div>
+              {updateMutation.isError && (
+                <p className="text-red-500 text-sm font-outer-sans">Erro ao salvar. Tente novamente.</p>
+              )}
+              <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+                <button type="button" onClick={() => setEditingClient(null)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 font-outer-sans">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={updateMutation.isPending}
+                  className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all font-outer-sans disabled:opacity-50">
+                  {updateMutation.isPending ? 'Salvando...' : 'Salvar alterações'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmar Exclusão */}
+      {deletingClientId && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setDeletingClientId(null); }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm animate-slide-up p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-800 font-outer-sans">Excluir cliente</h3>
+                <p className="text-sm text-gray-500 font-outer-sans">Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 font-outer-sans mb-5">
+              Todos os dados do cliente serão permanentemente removidos do sistema.
+            </p>
+            {deleteMutation.isError && (
+              <p className="text-red-500 text-sm font-outer-sans mb-3">Erro ao excluir. Tente novamente.</p>
+            )}
+            <div className="flex gap-3">
+              <button onClick={() => setDeletingClientId(null)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 font-outer-sans">
+                Cancelar
+              </button>
+              <button onClick={() => deleteMutation.mutate(deletingClientId)} disabled={deleteMutation.isPending}
+                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all font-outer-sans disabled:opacity-50">
+                {deleteMutation.isPending ? 'Excluindo...' : 'Excluir'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
