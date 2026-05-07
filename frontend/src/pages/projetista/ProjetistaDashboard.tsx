@@ -6,7 +6,7 @@ import { ProjetistaSidebar } from '../../components/projetista/ProjetistaSidebar
 import { ProjetistaHome } from './ProjetistaHome';
 import { ProjetistaNotes } from './ProjetistaNotes';
 import { ProjetistaProjects } from './ProjetistaProjects';
-import { VendedorKanban } from '../vendedor/VendedorKanban';
+import { ProjetistaKanban } from './ProjetistaKanban';
 import { BgaIA } from '../client/BgaIA';
 
 const PAGE_TITLES: Record<string, string> = {
@@ -115,7 +115,7 @@ export function ProjetistaDashboard() {
             <Route index element={<ProjetistaHome />} />
             <Route path="notes" element={<ProjetistaNotes />} />
             <Route path="projects" element={<ProjetistaProjects />} />
-            <Route path="kanban" element={<VendedorKanban />} />
+            <Route path="kanban" element={<ProjetistaKanban />} />
             <Route path="ceniq" element={<BgaIA endpoint="/projetista/ceniq" />} />
           </Routes>
         </main>
