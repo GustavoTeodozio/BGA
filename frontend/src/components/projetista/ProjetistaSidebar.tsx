@@ -60,6 +60,12 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
     </svg>
   );
 
+  const KanbanIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v12a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 17a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2z" />
+    </svg>
+  );
+
   const CeniqIcon = () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -71,6 +77,7 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
     { label: 'TRABALHO',  items: [
       { path: '/projetista/notes',    label: 'Anotações', icon: NotesIcon,    description: 'Suas anotações' },
       { path: '/projetista/projects', label: 'Projetos',  icon: ProjectsIcon, description: 'Gerenciar projetos' },
+      { path: '/projetista/kanban',   label: 'Kanban',    icon: KanbanIcon,   description: 'Fluxo de tarefas' },
     ]},
     { label: 'FERRAMENTAS', items: [
       { path: '/projetista/ceniq', label: 'Ceniq IA', icon: CeniqIcon, description: 'Design de stands com IA' },
@@ -87,7 +94,7 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
         className={`fixed left-0 top-0 h-screen w-60 z-50 flex flex-col transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:z-40`}
         style={{
-          background: 'linear-gradient(180deg, #2d1648 0%, #4a1d6a 40%, #3d1759 100%)',
+          background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 40%, #111111 100%)',
           boxShadow: '4px 0 24px rgba(0,0,0,0.25)',
         }}
       >
@@ -99,10 +106,10 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
             </div>
             <div className="min-w-0">
               <p className="text-white font-bold text-sm leading-tight truncate font-outer-sans">BGA STANDS</p>
-              <p className="text-purple-300/70 text-[10px] font-outer-sans">Painel Projetista</p>
+              <p className="text-gray-400/70 text-[10px] font-outer-sans">Painel Projetista</p>
             </div>
           </Link>
-          <button onClick={onClose} className="md:hidden text-purple-300 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0">
+          <button onClick={onClose} className="md:hidden text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -111,8 +118,8 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
 
         {/* ── Status badge ── */}
         <div className="px-4 pt-3 pb-2">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/8 border border-white/10">
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse flex-shrink-0"></span>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+            <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-pulse flex-shrink-0"></span>
             <span className="text-[11px] font-semibold text-purple-200 font-outer-sans">Projetista · Online</span>
           </div>
         </div>
@@ -122,7 +129,7 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
           {sections.map((section, si) => (
             <div key={si} className={si > 0 ? 'mt-3' : ''}>
               {section.label && (
-                <p className="text-[9px] font-bold text-purple-300/40 uppercase tracking-widest px-3 mb-1.5 font-outer-sans">
+                <p className="text-[9px] font-bold text-gray-500/60 uppercase tracking-widest px-3 mb-1.5 font-outer-sans">
                   {section.label}
                 </p>
               )}
@@ -132,27 +139,27 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
                   <Link key={item.path} to={item.path} onClick={onClose}
                     className={`group relative flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150
                       ${active
-                        ? 'bg-gradient-to-r from-purple-500/80 to-purple-600/80 text-white shadow-md shadow-black/20'
-                        : 'text-purple-200/80 hover:bg-white/8 hover:text-white'
+                        ? 'bg-gradient-to-r from-gray-600/90 to-gray-700/90 text-white shadow-md shadow-black/20'
+                        : 'text-gray-300/80 hover:bg-white/8 hover:text-white'
                       }`}
                   >
-                    {active && <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-purple-300 rounded-r-full" />}
+                    {active && <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-gray-300 rounded-r-full" />}
                     <div className={`relative z-10 flex-shrink-0 transition-transform duration-150
-                      ${active ? 'text-white' : 'text-purple-300 group-hover:text-white group-hover:scale-110'}`}>
+                      ${active ? 'text-white' : 'text-gray-400 group-hover:text-white group-hover:scale-110'}`}>
                       <item.icon />
                     </div>
                     <div className="flex-1 min-w-0 relative z-10">
                       <div className={`text-[13px] font-semibold truncate font-outer-sans leading-tight
-                        ${active ? 'text-white' : 'text-purple-100'}`}>
+                        ${active ? 'text-white' : 'text-gray-100'}`}>
                         {item.label}
                       </div>
                       <div className={`text-[10px] truncate font-outer-sans leading-tight
-                        ${active ? 'text-purple-100/80' : 'text-purple-400/60'}`}>
+                        ${active ? 'text-gray-100/80' : 'text-gray-500/60'}`}>
                         {item.description}
                       </div>
                     </div>
                     {active && (
-                      <svg className="w-3 h-3 text-purple-200 flex-shrink-0 relative z-10" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-3 h-3 text-gray-300 flex-shrink-0 relative z-10" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     )}
@@ -171,10 +178,10 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
           >
             <UserAvatar size={6} />
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] text-purple-200 font-semibold truncate font-outer-sans">{user?.name || 'Projetista'}</p>
-              <p className="text-[10px] text-purple-400/60 font-outer-sans">Clique para editar perfil</p>
+              <p className="text-[11px] text-gray-200 font-semibold truncate font-outer-sans">{user?.name || 'Projetista'}</p>
+              <p className="text-[10px] text-gray-500/60 font-outer-sans">Clique para editar perfil</p>
             </div>
-            <svg className="w-3.5 h-3.5 text-purple-400/60 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 text-gray-500/60 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           </button>
@@ -191,7 +198,7 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
             <div className="flex flex-col items-center mb-5">
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center cursor-pointer ring-4 ring-purple-100 hover:ring-purple-300 transition-all relative group"
+                className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-gray-500 to-gray-700 flex items-center justify-center cursor-pointer ring-4 ring-gray-200 hover:ring-gray-400 transition-all relative group"
               >
                 {editAvatar
                   ? <img src={editAvatar} alt="avatar" className="w-full h-full object-cover" />
@@ -214,7 +221,7 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-sm font-outer-sans transition-colors"
+                className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:border-gray-500 focus:outline-none text-sm font-outer-sans transition-colors"
                 placeholder="Seu nome"
               />
             </div>
@@ -229,7 +236,7 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
               <button
                 onClick={handleSaveProfile}
                 disabled={saving}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold font-outer-sans text-sm hover:from-purple-700 hover:to-purple-800 transition-all shadow-md disabled:opacity-60"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-gray-700 to-gray-800 text-white font-semibold font-outer-sans text-sm hover:from-gray-800 hover:to-gray-900 transition-all shadow-md disabled:opacity-60"
               >
                 {saving ? 'Salvando...' : 'Salvar'}
               </button>
