@@ -212,65 +212,62 @@ export const deleteClient = async (req: Request, res: Response) => {
       throw new AppError('Não é possível excluir este tenant', 400);
     }
 
-    // Deletar em cascata todos os dados relacionados
+    const cid = params.clientId;
+
     await prisma.$transaction(async (tx) => {
-      // Deletar em ordem para respeitar as constraints
-      
-      // 1. Deletar lessonProgress primeiro (tem relação com tenant)
-      await tx.lessonProgress.deleteMany({ where: { tenantId: params.clientId } });
-      
-      // 2. Deletar logs e tokens
-      await tx.mediaDownloadLog.deleteMany({ where: { tenantId: params.clientId } });
-      await tx.downloadToken.deleteMany({ where: { tenantId: params.clientId } });
-      
-      // 3. Deletar outros dados relacionados ao tenant
-      await tx.auditLog.deleteMany({ where: { tenantId: params.clientId } });
-      await tx.integrationAsset.deleteMany({ where: { tenantId: params.clientId } });
-      await tx.notification.deleteMany({ where: { tenantId: params.clientId } });
-      await tx.report.deleteMany({ where: { tenantId: params.clientId } });
-      await tx.manualResult.deleteMany({ where: { tenantId: params.clientId } });
-      await tx.lead.deleteMany({ where: { tenantId: params.clientId } });
-      await tx.campaignApproval.deleteMany({ where: { tenantId: params.clientId } });
-      await tx.campaign.deleteMany({ where: { tenantId: params.clientId } });
-      await tx.mediaAsset.deleteMany({ where: { tenantId: params.clientId } });
-      
-      // 4. Deletar training tracks e seus módulos/lições
-      const tracks = await tx.trainingTrack.findMany({ where: { tenantId: params.clientId } });
+      // Stand Progress Tracker (fotos e comentários deletam em cascade via onDelete: Cascade)
+      await tx.standUpdate.deleteMany({ where: { tenantId: cid } });
+
+      // CRM: activities deletam em cascade via opportunity
+      await tx.opportunity.deleteMany({ where: { tenantId: cid } });
+      await tx.crmConfig.deleteMany({ where: { tenantId: cid } });
+
+      // Tasks: comentários, checklist, anexos deletam em cascade
+      await tx.task.deleteMany({ where: { tenantId: cid } });
+
+      // Notas, orçamentos, vendas
+      await tx.note.deleteMany({ where: { tenantId: cid } });
+      await tx.budget.deleteMany({ where: { tenantId: cid } });
+      await tx.sale.deleteMany({ where: { tenantId: cid } });
+
+      // Logs e tokens
+      await tx.lessonProgress.deleteMany({ where: { tenantId: cid } });
+      await tx.mediaDownloadLog.deleteMany({ where: { tenantId: cid } });
+      await tx.downloadToken.deleteMany({ where: { tenantId: cid } });
+
+      // Outros dados do tenant
+      await tx.auditLog.deleteMany({ where: { tenantId: cid } });
+      await tx.integrationAsset.deleteMany({ where: { tenantId: cid } });
+      await tx.notification.deleteMany({ where: { tenantId: cid } });
+      await tx.report.deleteMany({ where: { tenantId: cid } });
+      await tx.manualResult.deleteMany({ where: { tenantId: cid } });
+      await tx.lead.deleteMany({ where: { tenantId: cid } });
+      await tx.campaignApproval.deleteMany({ where: { tenantId: cid } });
+      await tx.campaign.deleteMany({ where: { tenantId: cid } });
+      await tx.mediaAsset.deleteMany({ where: { tenantId: cid } });
+
+      // Training tracks (lições e módulos deletam em cascade)
+      const tracks = await tx.trainingTrack.findMany({ where: { tenantId: cid } });
       for (const track of tracks) {
         const modules = await tx.trainingModule.findMany({ where: { trackId: track.id } });
-        for (const module of modules) {
-          // Buscar todas as lições do módulo
-          const lessons = await tx.lesson.findMany({ where: { moduleId: module.id } });
-          const lessonIds = lessons.map((l) => l.id);
-          
-          // Deletar lessonProgress das lições primeiro
+        for (const mod of modules) {
+          const lessonIds = (await tx.lesson.findMany({ where: { moduleId: mod.id }, select: { id: true } })).map(l => l.id);
           if (lessonIds.length > 0) {
             await tx.lessonProgress.deleteMany({ where: { lessonId: { in: lessonIds } } });
           }
-          
-          // Depois deletar as lições
-          await tx.lesson.deleteMany({ where: { moduleId: module.id } });
+          await tx.lesson.deleteMany({ where: { moduleId: mod.id } });
         }
         await tx.trainingModule.deleteMany({ where: { trackId: track.id } });
       }
-      await tx.trainingTrack.deleteMany({ where: { tenantId: params.clientId } });
+      await tx.trainingTrack.deleteMany({ where: { tenantId: cid } });
 
-      // 5. Deletar sessões
-      await tx.session.deleteMany({ where: { tenantId: params.clientId } });
+      // Sessões e usuários
+      await tx.session.deleteMany({ where: { tenantId: cid } });
+      await tx.user.deleteMany({ where: { tenantId: cid, role: 'CLIENT' } });
 
-      // 6. Deletar usuários (que não são admin)
-      await tx.user.deleteMany({
-        where: {
-          tenantId: params.clientId,
-          role: 'CLIENT',
-        },
-      });
-
-      // 7. Deletar ClientProfile
-      await tx.clientProfile.delete({ where: { tenantId: params.clientId } });
-
-      // 8. Por último, deletar o Tenant
-      await tx.tenant.delete({ where: { id: params.clientId } });
+      // Perfil e tenant
+      await tx.clientProfile.delete({ where: { tenantId: cid } });
+      await tx.tenant.delete({ where: { id: cid } });
     });
 
     return res.json({ message: 'Cliente excluído com sucesso' });
