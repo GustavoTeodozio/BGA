@@ -101,7 +101,6 @@ export function VendedorSidebar({ isOpen, onClose }: VendedorSidebarProps) {
     { path: '/vendedor',             label: 'Dashboard',    icon: DashboardIcon, description: 'Visão geral' },
     { path: '/vendedor/crm',         label: 'CRM Pipeline', icon: CRMIcon,       description: 'Funil de vendas' },
     { path: '/vendedor/crm-agenda',  label: 'Agenda CRM',   icon: AgendaIcon,    description: 'Atividades do dia' },
-    { path: '/vendedor/kanban',      label: 'Kanban',       icon: KanbanIcon,    description: 'Fluxo de projetos' },
     { path: '/vendedor/clients',     label: 'Clientes',     icon: ClientsIcon,   description: 'Cadastrar e visualizar' },
     { path: '/vendedor/notes',       label: 'Anotações',    icon: NotesIcon,     description: 'Suas anotações' },
     { path: '/vendedor/budgets',     label: 'Orçamentos',   icon: BudgetIcon,    description: 'Criar e gerenciar' },
@@ -112,7 +111,7 @@ export function VendedorSidebar({ isOpen, onClose }: VendedorSidebarProps) {
   const sections = [
     { label: null,       items: menuItems.slice(0, 1) },
     { label: 'CRM',      items: menuItems.slice(1, 3) },
-    { label: 'TRABALHO', items: menuItems.slice(3, 9) },
+    { label: 'TRABALHO', items: menuItems.slice(3, 8) },
   ];
 
   return (
