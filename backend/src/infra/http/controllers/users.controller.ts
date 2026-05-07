@@ -30,19 +30,28 @@ export const listUsers = async (req: Request, res: Response) => {
 };
 
 export const listTeamMembers = async (req: Request, res: Response) => {
-  const { userId } = req.auth!;
+  try {
+    const { userId, tenantId } = req.auth!;
 
-  const members = await prisma.user.findMany({
-    where: {
+    const where: any = {
       isActive: true,
-      role: { in: ['VENDEDOR', 'PROJETISTA', 'ADMIN'] },
+      role: { in: ['VENDEDOR', 'PROJETISTA', 'ADMIN'] as any[] },
       id: { not: userId },
-    },
-    select: { id: true, name: true, role: true },
-    orderBy: { name: 'asc' },
-  });
+    };
 
-  return res.json(members);
+    if (tenantId) where.tenantId = tenantId;
+
+    const members = await prisma.user.findMany({
+      where,
+      select: { id: true, name: true, role: true },
+      orderBy: { name: 'asc' },
+    });
+
+    return res.json(members);
+  } catch (error: any) {
+    console.error('[listTeamMembers] erro:', error);
+    return res.status(500).json({ message: 'Erro ao buscar membros da equipe', detail: error.message });
+  }
 };
 
 export const listAdmins = async (req: Request, res: Response) => {

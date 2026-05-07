@@ -222,7 +222,8 @@ export const deleteClient = async (req: Request, res: Response) => {
       await tx.opportunity.deleteMany({ where: { tenantId: cid } });
       await tx.crmConfig.deleteMany({ where: { tenantId: cid } });
 
-      // Tasks: comentários, checklist, anexos deletam em cascade
+      // Tasks: TaskComment tem FK para Tenant (sem cascade), deletar antes das tasks
+      await tx.taskComment.deleteMany({ where: { tenantId: cid } });
       await tx.task.deleteMany({ where: { tenantId: cid } });
 
       // Notas, orçamentos, vendas
@@ -260,6 +261,9 @@ export const deleteClient = async (req: Request, res: Response) => {
         await tx.trainingModule.deleteMany({ where: { trackId: track.id } });
       }
       await tx.trainingTrack.deleteMany({ where: { tenantId: cid } });
+
+      // Projetos (ProjectFile deleta em cascade via Project)
+      await tx.project.deleteMany({ where: { tenantId: cid } });
 
       // Sessões e usuários
       await tx.session.deleteMany({ where: { tenantId: cid } });
