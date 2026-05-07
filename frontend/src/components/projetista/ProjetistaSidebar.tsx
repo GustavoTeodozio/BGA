@@ -1,5 +1,8 @@
+import { useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { UserAvatar } from '../UserAvatar';
+import { useAuthStore } from '../../store/auth.store';
+import api from '../../api/client';
 
 interface ProjetistaSidebarProps {
   isOpen: boolean;
@@ -8,10 +11,35 @@ interface ProjetistaSidebarProps {
 
 export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
   const location = useLocation();
+  const { user, updateUser } = useAuthStore();
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [editName, setEditName] = useState(user?.name || '');
+  const [editAvatar, setEditAvatar] = useState(user?.avatar || '');
+  const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isActive = (path: string) => {
     if (path === '/projetista') return location.pathname === '/projetista';
     return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setEditAvatar(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      const { data } = await api.patch('/projetista/profile', { name: editName, avatar: editAvatar || null });
+      updateUser({ name: data.name, avatar: data.avatar ?? undefined });
+      setShowProfileModal(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const DashboardIcon = () => (
@@ -109,12 +137,10 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
                       }`}
                   >
                     {active && <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-purple-300 rounded-r-full" />}
-
                     <div className={`relative z-10 flex-shrink-0 transition-transform duration-150
                       ${active ? 'text-white' : 'text-purple-300 group-hover:text-white group-hover:scale-110'}`}>
                       <item.icon />
                     </div>
-
                     <div className="flex-1 min-w-0 relative z-10">
                       <div className={`text-[13px] font-semibold truncate font-outer-sans leading-tight
                         ${active ? 'text-white' : 'text-purple-100'}`}>
@@ -125,7 +151,6 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
                         {item.description}
                       </div>
                     </div>
-
                     {active && (
                       <svg className="w-3 h-3 text-purple-200 flex-shrink-0 relative z-10" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -140,15 +165,78 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
 
         {/* ── Footer ── */}
         <div className="px-3 py-3 border-t border-white/8">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5">
+          <button
+            onClick={() => { setEditName(user?.name || ''); setEditAvatar(user?.avatar || ''); setShowProfileModal(true); }}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-left"
+          >
             <UserAvatar size={6} />
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] text-purple-200 font-semibold truncate font-outer-sans">Projetista</p>
-              <p className="text-[10px] text-purple-400/60 font-outer-sans">Acesso ao projeto</p>
+              <p className="text-[11px] text-purple-200 font-semibold truncate font-outer-sans">{user?.name || 'Projetista'}</p>
+              <p className="text-[10px] text-purple-400/60 font-outer-sans">Clique para editar perfil</p>
+            </div>
+            <svg className="w-3.5 h-3.5 text-purple-400/60 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Profile Modal ── */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowProfileModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-scale-in">
+            <h3 className="text-base font-bold text-gray-800 font-outer-sans mb-5">Editar perfil</h3>
+
+            <div className="flex flex-col items-center mb-5">
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center cursor-pointer ring-4 ring-purple-100 hover:ring-purple-300 transition-all relative group"
+              >
+                {editAvatar
+                  ? <img src={editAvatar} alt="avatar" className="w-full h-full object-cover" />
+                  : <svg className="w-9 h-9 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
+                }
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-2 font-outer-sans">Clique para alterar a foto</p>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+            </div>
+
+            <div className="mb-5">
+              <label className="block text-xs font-semibold text-gray-600 font-outer-sans mb-1.5">Nome</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-sm font-outer-sans transition-colors"
+                placeholder="Seu nome"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold font-outer-sans text-sm hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold font-outer-sans text-sm hover:from-purple-700 hover:to-purple-800 transition-all shadow-md disabled:opacity-60"
+              >
+                {saving ? 'Salvando...' : 'Salvar'}
+              </button>
             </div>
           </div>
         </div>
-      </aside>
+      )}
     </>
   );
 }
