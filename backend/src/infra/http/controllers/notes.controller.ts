@@ -27,10 +27,10 @@ export const listNotes = async (req: Request, res: Response) => {
 
   const where: any = {};
 
-  // Admin vê todas do tenant; outros veem as próprias + as compartilhadas com eles
   if (role === 'ADMIN') {
     if (tenantId) where.tenantId = tenantId;
   } else {
+    // Vendedor vê apenas as próprias + compartilhadas com ele
     if (tenantId) where.tenantId = tenantId;
     where.OR = [
       { createdById: userId },
@@ -39,10 +39,17 @@ export const listNotes = async (req: Request, res: Response) => {
   }
 
   if (search) {
-    where.OR = [
+    // Combina filtro de ownership com busca usando AND
+    const searchFilter = [
       { title: { contains: String(search), mode: 'insensitive' } },
       { content: { contains: String(search), mode: 'insensitive' } },
     ];
+    if (where.OR) {
+      where.AND = [{ OR: where.OR }, { OR: searchFilter }];
+      delete where.OR;
+    } else {
+      where.OR = searchFilter;
+    }
   }
 
   const notes = await prisma.note.findMany({

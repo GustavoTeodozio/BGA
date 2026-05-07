@@ -21,8 +21,13 @@ export async function listStages(_req: Request, res: Response) {
 
 export async function listStandUpdates(req: Request, res: Response) {
   const tenantId = req.params.clientId as string;
+  const { role, userId } = req.auth!;
   const profile = await prisma.clientProfile.findFirst({ where: { tenantId } });
   if (!profile) return res.json([]);
+
+  if (role === 'VENDEDOR' && profile.createdById !== userId) {
+    return res.status(403).json({ message: 'Acesso negado' });
+  }
 
   const updates = await prisma.standUpdate.findMany({
     where: { clientId: profile.id },
@@ -40,12 +45,17 @@ export async function listStandUpdates(req: Request, res: Response) {
 
 export async function createStandUpdate(req: Request, res: Response) {
   const tenantId = req.params.clientId as string;
+  const { role, userId } = req.auth!;
   const { stage, title, description } = req.body as {
     stage: string; title: string; description?: string;
   };
 
   const client = await prisma.clientProfile.findFirst({ where: { tenantId } });
   if (!client) return res.status(404).json({ message: 'Cliente não encontrado.' });
+
+  if (role === 'VENDEDOR' && client.createdById !== userId) {
+    return res.status(403).json({ message: 'Acesso negado' });
+  }
 
   const update = await prisma.standUpdate.create({
     data: {

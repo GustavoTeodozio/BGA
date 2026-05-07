@@ -8,6 +8,7 @@ export interface ListTasksParams extends PaginationParams {
   assigneeId?: string;
   priority?: string;
   includeLinked?: boolean;
+  createdById?: string;
 }
 
 export interface CreateTaskInput {
@@ -50,6 +51,7 @@ export class TaskService {
       ? { OR: [{ tenantId }, { clientTenantId: tenantId }] }
       : { tenantId };
     const where: any = { ...baseWhere };
+    if (params.createdById) where.createdById = params.createdById;
     if (params.status) where.status = params.status;
     if (params.category) where.category = params.category;
     if (params.assigneeId) where.assigneeId = params.assigneeId;

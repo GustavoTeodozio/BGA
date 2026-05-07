@@ -210,7 +210,8 @@ export const listTasks = async (req: Request, res: Response) => {
 
   const filters = listSchema.parse(req.query);
   const includeLinked = req.auth?.role === 'CLIENT';
-  const result = await taskService.listTasks(tenantId, { ...filters, includeLinked });
+  const createdById = req.auth?.role === 'VENDEDOR' ? req.auth.userId : undefined;
+  const result = await taskService.listTasks(tenantId, { ...filters, includeLinked, createdById });
 
   return res.json(result);
 };
