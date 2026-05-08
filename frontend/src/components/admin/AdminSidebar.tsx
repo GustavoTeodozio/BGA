@@ -104,6 +104,11 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   );
+  const EmployeesIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6a4 4 0 11-8 0 4 4 0 018 0zM12 21a21.968 21.968 0 01-7.5-1.325" />
+    </svg>
+  );
   const CeniqIcon = () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -120,11 +125,12 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       { path: '/admin/crm-agenda', label: 'Agenda',   icon: AgendaIcon, description: 'Atividades do dia' },
     ]},
     { label: 'GESTÃO', items: [
-      { path: '/admin/clients',  label: 'Clientes',      icon: ClientsIcon,  description: 'Gestão de clientes' },
-      { path: '/admin/notes',    label: 'Anotações',     icon: NotesIcon,    description: 'Todas as anotações' },
-      { path: '/admin/budgets',  label: 'Orçamentos',    icon: BudgetIcon,   description: 'Todos os orçamentos' },
-      { path: '/admin/projects', label: 'Projetos',      icon: ProjectsIcon, description: 'Todos os projetos' },
-      { path: '/admin/team',     label: 'Equipe',        icon: TeamIcon,     description: 'Vendedores e projetistas' },
+      { path: '/admin/clients',    label: 'Clientes',      icon: ClientsIcon,    description: 'Gestão de clientes' },
+      { path: '/admin/notes',      label: 'Anotações',     icon: NotesIcon,      description: 'Todas as anotações' },
+      { path: '/admin/budgets',    label: 'Orçamentos',    icon: BudgetIcon,     description: 'Todos os orçamentos' },
+      { path: '/admin/projects',   label: 'Projetos',      icon: ProjectsIcon,   description: 'Todos os projetos' },
+      { path: '/admin/team',       label: 'Equipe',        icon: TeamIcon,       description: 'Vendedores e projetistas' },
+      { path: '/admin/employees',  label: 'Funcionários',  icon: EmployeesIcon,  description: 'Equipe de montagem' },
     ]},
     { label: 'FERRAMENTAS', items: [
       { path: '/admin/ceniq',    label: 'Ceniq IA',      icon: CeniqIcon,    description: 'Design de stands com IA' },

@@ -95,6 +95,19 @@ import {
   addStandUpdateComment,
   deleteStandUpdateComment,
 } from '../controllers/stand-updates.controller';
+import {
+  listEmployees,
+  getEmployee,
+  createEmployee,
+  updateEmployee,
+  deleteEmployee,
+  uploadEmployeePhoto,
+  uploadEmployeeDoc,
+  markAttendance,
+  listAttendance,
+  addAdvance,
+  deleteAdvance,
+} from '../controllers/employees.controller';
 
 const adminRoutes = Router();
 
@@ -212,6 +225,19 @@ adminRoutes.post('/stand-updates/:id/photos', upload.array('photos', 10), asyncH
 adminRoutes.delete('/stand-updates/photos/:photoId', asyncHandler(deleteStandUpdatePhoto));
 adminRoutes.post('/stand-updates/:id/comments', asyncHandler(addStandUpdateComment));
 adminRoutes.delete('/stand-updates/comments/:commentId', asyncHandler(deleteStandUpdateComment));
+
+// Employees
+adminRoutes.get('/employees', asyncHandler(listEmployees));
+adminRoutes.post('/employees', asyncHandler(createEmployee));
+adminRoutes.get('/employees/:employeeId', asyncHandler(getEmployee));
+adminRoutes.patch('/employees/:employeeId', asyncHandler(updateEmployee));
+adminRoutes.delete('/employees/:employeeId', asyncHandler(deleteEmployee));
+adminRoutes.post('/employees/:employeeId/photo', upload.single('photo'), asyncHandler(uploadEmployeePhoto));
+adminRoutes.post('/employees/:employeeId/doc', upload.single('doc'), asyncHandler(uploadEmployeeDoc));
+adminRoutes.post('/employees/:employeeId/attendance', asyncHandler(markAttendance));
+adminRoutes.get('/employees/:employeeId/attendance', asyncHandler(listAttendance));
+adminRoutes.post('/employees/:employeeId/advances', asyncHandler(addAdvance));
+adminRoutes.delete('/employees/advances/:advanceId', asyncHandler(deleteAdvance));
 
 export default adminRoutes;
 
