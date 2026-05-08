@@ -77,7 +77,7 @@ export async function createEmployee(req: Request, res: Response) {
   const parsed = createEmployeeSchema.safeParse(req.body);
 
   if (!parsed.success) {
-    return res.status(400).json({ message: parsed.error.issues[0].message });
+    return res.status(400).json({ message: parsed.error.issues[0]?.message ?? 'Dados inválidos' });
   }
 
   const { birthDate, email, dailyRate, ...rest } = parsed.data;
@@ -106,7 +106,7 @@ export async function updateEmployee(req: Request, res: Response) {
 
   const parsed = updateEmployeeSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ message: parsed.error.issues[0].message });
+    return res.status(400).json({ message: parsed.error.issues[0]?.message ?? 'Dados inválidos' });
   }
 
   const { birthDate, email, dailyRate, ...rest } = parsed.data;
@@ -230,7 +230,7 @@ export async function markAttendance(req: Request, res: Response) {
 
   const parsed = attendanceSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ message: parsed.error.issues[0].message });
+    return res.status(400).json({ message: parsed.error.issues[0]?.message ?? 'Dados inválidos' });
   }
 
   const { date, present, notes } = parsed.data;
@@ -284,7 +284,7 @@ export async function addAdvance(req: Request, res: Response) {
 
   const parsed = advanceSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ message: parsed.error.issues[0].message });
+    return res.status(400).json({ message: parsed.error.issues[0]?.message ?? 'Dados inválidos' });
   }
 
   const { amount, date, notes } = parsed.data;
