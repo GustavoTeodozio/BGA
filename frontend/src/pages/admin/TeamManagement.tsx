@@ -11,7 +11,7 @@ const ROLE_MAP: Record<string, { label: string; color: string; bg: string }> = {
 };
 
 export function TeamManagement() {
-  const { alert } = useDialog();
+  const { alert, confirm } = useDialog();
   const qc = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'VENDEDOR' });
@@ -25,6 +25,12 @@ export function TeamManagement() {
     mutationFn: (data: any) => api.post('/admin/admins', data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'users'] }); setShowModal(false); },
     onError: (err: any) => alert({ title: 'Erro', message: err.response?.data?.message || 'Erro ao criar usuário', type: 'alert' }),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => api.delete(`/admin/admins/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+    onError: (err: any) => alert({ title: 'Erro', message: err.response?.data?.message || 'Erro ao remover membro', type: 'alert' }),
   });
 
   const teamMembers = users.filter((u: any) => u.role !== 'CLIENT');
@@ -74,7 +80,7 @@ export function TeamManagement() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {teamMembers.map((u: any) => (
-            <div key={u.id} className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-lg transition-all duration-300">
+            <div key={u.id} className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-lg transition-all duration-300 group">
               <div className="flex items-center gap-3 mb-3">
                 <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${
                   u.role === 'ADMIN' ? 'from-wine-500 to-wine-600' :
@@ -87,6 +93,17 @@ export function TeamManagement() {
                   <h3 className="font-semibold text-gray-800 text-sm font-outer-sans truncate">{u.name}</h3>
                   <p className="text-xs text-gray-500 truncate">{u.email}</p>
                 </div>
+                <button
+                  onClick={async () => {
+                    const ok = await confirm({ title: 'Remover membro', message: `Desativar ${u.name} da equipe?`, confirmText: 'Remover' });
+                    if (ok) deleteMut.mutate(u.id);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-1 flex-shrink-0"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
               </div>
               <div className="flex items-center justify-between">
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_MAP[u.role]?.bg} ${ROLE_MAP[u.role]?.color}`}>

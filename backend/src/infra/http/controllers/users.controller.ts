@@ -187,19 +187,13 @@ export const updateProfile = async (req: Request, res: Response) => {
 export const deleteAdmin = async (req: Request, res: Response) => {
   try {
     const { adminId } = req.params;
-    const { confirmationCode } = deleteAdminSchema.parse(req.body);
 
-    // Verificar se o admin existe
     const admin = await prisma.user.findUnique({
       where: { id: adminId },
     });
 
     if (!admin) {
-      return res.status(404).json({ message: 'Administrador não encontrado' });
-    }
-
-    if (admin.role !== 'ADMIN') {
-      return res.status(400).json({ message: 'Usuário não é um administrador' });
+      return res.status(404).json({ message: 'Membro não encontrado' });
     }
 
     // Não permitir excluir a si mesmo
@@ -207,12 +201,7 @@ export const deleteAdmin = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Você não pode excluir sua própria conta' });
     }
 
-    // Verificar código de confirmação
-    if (confirmationCode !== '2112') {
-      return res.status(400).json({ message: 'Código de confirmação inválido' });
-    }
-
-    // Excluir admin (soft delete - desativar)
+    // Soft delete — desativar
     await prisma.user.update({
       where: { id: adminId },
       data: { isActive: false },
