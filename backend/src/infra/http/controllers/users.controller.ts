@@ -33,19 +33,26 @@ export const listTeamMembers = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.auth!;
 
-    const where: any = {
-      isActive: true,
-      role: { in: ['VENDEDOR', 'PROJETISTA', 'ADMIN'] as any[] },
-      id: { not: userId },
-    };
+    let members: any[];
 
-    if (tenantId) where.tenantId = tenantId;
-
-    const members = await prisma.user.findMany({
-      where,
-      select: { id: true, name: true, role: true },
-      orderBy: { name: 'asc' },
-    });
+    if (tenantId) {
+      members = await prisma.$queryRaw`
+        SELECT id, name, role FROM "User"
+        WHERE "isActive" = true
+          AND role::text IN ('VENDEDOR', 'PROJETISTA', 'ADMIN')
+          AND id != ${userId}
+          AND "tenantId" = ${tenantId}
+        ORDER BY name ASC
+      `;
+    } else {
+      members = await prisma.$queryRaw`
+        SELECT id, name, role FROM "User"
+        WHERE "isActive" = true
+          AND role::text IN ('VENDEDOR', 'PROJETISTA', 'ADMIN')
+          AND id != ${userId}
+        ORDER BY name ASC
+      `;
+    }
 
     return res.json(members);
   } catch (error: any) {

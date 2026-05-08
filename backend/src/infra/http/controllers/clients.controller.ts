@@ -267,7 +267,8 @@ export const deleteClient = async (req: Request, res: Response) => {
 
       // Sessões e usuários
       await tx.session.deleteMany({ where: { tenantId: cid } });
-      await tx.user.deleteMany({ where: { tenantId: cid, role: 'CLIENT' } });
+      // Usar raw SQL porque o banco pode ter role como text sem cast automático
+      await tx.$executeRaw`DELETE FROM "User" WHERE "tenantId" = ${cid} AND role::text = 'CLIENT'`;
 
       // Perfil e tenant
       await tx.clientProfile.delete({ where: { tenantId: cid } });
