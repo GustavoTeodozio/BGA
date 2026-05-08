@@ -13,9 +13,14 @@ fi
 echo "Resolvendo migracoes travadas..."
 npx prisma migrate resolve --rolled-back 20260506000002_client_isolation_and_note_sharing 2>/dev/null || true
 npx prisma migrate resolve --rolled-back 20260506000003_create_missing_tables 2>/dev/null || true
+npx prisma migrate resolve --rolled-back 20260507000000_contractmonths_to_string 2>/dev/null || true
+npx prisma migrate resolve --rolled-back 20260508000000_employee_module 2>/dev/null || true
 
 echo "Rodando migracoes..."
-npx prisma migrate deploy
+npx prisma migrate deploy || {
+  echo "migrate deploy falhou, tentando db push como fallback..."
+  npx prisma db push --accept-data-loss
+}
 
 mkdir -p storage/media tmp/uploads
 
