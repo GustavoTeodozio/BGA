@@ -77,7 +77,7 @@ export async function createEmployee(req: Request, res: Response) {
   const parsed = createEmployeeSchema.safeParse(req.body);
 
   if (!parsed.success) {
-    return res.status(400).json({ message: parsed.error.errors[0].message });
+    return res.status(400).json({ message: parsed.error.issues[0].message });
   }
 
   const { birthDate, email, dailyRate, ...rest } = parsed.data;
@@ -106,7 +106,7 @@ export async function updateEmployee(req: Request, res: Response) {
 
   const parsed = updateEmployeeSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ message: parsed.error.errors[0].message });
+    return res.status(400).json({ message: parsed.error.issues[0].message });
   }
 
   const { birthDate, email, dailyRate, ...rest } = parsed.data;
@@ -230,15 +230,16 @@ export async function markAttendance(req: Request, res: Response) {
 
   const parsed = attendanceSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ message: parsed.error.errors[0].message });
+    return res.status(400).json({ message: parsed.error.issues[0].message });
   }
 
   const { date, present, notes } = parsed.data;
   const dateObj = new Date(date + 'T00:00:00.000Z');
+  const empId = employeeId as string;
 
   const attendance = await prisma.employeeAttendance.upsert({
-    where: { employeeId_date: { employeeId, date: dateObj } },
-    create: { employeeId, date: dateObj, present, notes: notes || null },
+    where: { employeeId_date: { employeeId: empId, date: dateObj } },
+    create: { employeeId: empId, date: dateObj, present, notes: notes || null },
     update: { present, notes: notes || null },
   });
 
@@ -283,14 +284,14 @@ export async function addAdvance(req: Request, res: Response) {
 
   const parsed = advanceSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ message: parsed.error.errors[0].message });
+    return res.status(400).json({ message: parsed.error.issues[0].message });
   }
 
   const { amount, date, notes } = parsed.data;
   const dateObj = new Date(date + 'T00:00:00.000Z');
 
   const advance = await prisma.employeeAdvance.create({
-    data: { employeeId, amount, date: dateObj, notes: notes || null },
+    data: { employeeId: employeeId as string, amount, date: dateObj, notes: notes || null },
   });
 
   return res.status(201).json(advance);
