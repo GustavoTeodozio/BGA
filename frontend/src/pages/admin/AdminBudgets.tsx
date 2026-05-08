@@ -28,11 +28,28 @@ export function AdminBudgets() {
   const [editBudget, setEditBudget] = useState<any | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState('');
+  const [filterVendedor, setFilterVendedor] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
   const { data: budgets = [], isLoading } = useQuery({
     queryKey: ['admin', 'budgets'],
-    queryFn: async () => { const r = await api.get('/admin/budgets?mine=true'); return r.data; },
+    queryFn: async () => { const r = await api.get('/admin/budgets'); return r.data; },
   });
+
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ['admin', 'team-members'],
+    queryFn: async () => { const r = await api.get('/admin/team-members'); return r.data; },
+  });
+
+  const vendedores = (teamMembers as any[]).filter((m: any) => m.role === 'VENDEDOR');
+
+  const filtered = (budgets as any[]).filter((b: any) => {
+    if (filterVendedor && b.createdBy?.id !== filterVendedor) return false;
+    if (filterStatus && b.status !== filterStatus) return false;
+    return true;
+  });
+
+  const totalValue = filtered.reduce((sum: number, b: any) => sum + (b.totalValue ? Number(b.totalValue) : 0), 0);
 
   const createMut = useMutation({
     mutationFn: (data: any) => api.post('/admin/budgets', data),
@@ -97,7 +114,7 @@ export function AdminBudgets() {
       ...(form.notes && { notes: form.notes }),
     };
     if (editBudget) {
-      updateMut.mutate({ id: editBudget.id, data: payload });
+      updateMut.mutate({ id: editBudget.id, data: { ...payload, status: editBudget.status } });
     } else {
       createMut.mutate(payload);
     }
@@ -109,7 +126,7 @@ export function AdminBudgets() {
     <div className="animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <p className="text-gray-500 text-sm font-outer-sans">Seus orçamentos</p>
+        <p className="text-gray-500 text-sm font-outer-sans">Orçamentos de toda a equipe</p>
         <button
           onClick={openCreate}
           className="flex items-center gap-2 px-4 py-2 bg-wine-600 hover:bg-wine-700 text-white text-sm font-semibold rounded-lg transition-colors font-outer-sans shadow"
@@ -121,24 +138,83 @@ export function AdminBudgets() {
         </button>
       </div>
 
+      {/* Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="stat-card">
+          <div className="relative z-10">
+            <h3 className="text-sm font-medium text-gray-600 mb-1 font-outer-sans">Total de Orçamentos</h3>
+            <p className="text-3xl font-bold text-gray-800 font-outer-sans">{filtered.length}</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="relative z-10">
+            <h3 className="text-sm font-medium text-gray-600 mb-1 font-outer-sans">Aprovados</h3>
+            <p className="text-3xl font-bold text-green-600 font-outer-sans">
+              {filtered.filter((b: any) => b.status === 'APROVADO').length}
+            </p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="relative z-10">
+            <h3 className="text-sm font-medium text-gray-600 mb-1 font-outer-sans">Valor Total</h3>
+            <p className="text-2xl font-bold text-gray-800 font-outer-sans">{formatCurrency(totalValue)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <select
+          value={filterVendedor}
+          onChange={e => setFilterVendedor(e.target.value)}
+          className="px-3 py-2 border border-gray-200 rounded-lg text-sm font-outer-sans bg-white focus:outline-none focus:ring-2 focus:ring-wine-300"
+        >
+          <option value="">Todos os vendedores</option>
+          {vendedores.map((v: any) => (
+            <option key={v.id} value={v.id}>{v.name}</option>
+          ))}
+        </select>
+        <select
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+          className="px-3 py-2 border border-gray-200 rounded-lg text-sm font-outer-sans bg-white focus:outline-none focus:ring-2 focus:ring-wine-300"
+        >
+          <option value="">Todos os status</option>
+          <option value="PENDENTE">Pendente</option>
+          <option value="APROVADO">Aprovado</option>
+          <option value="RECUSADO">Recusado</option>
+          <option value="FECHADO">Fechado</option>
+        </select>
+        {(filterVendedor || filterStatus) && (
+          <button
+            onClick={() => { setFilterVendedor(''); setFilterStatus(''); }}
+            className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 font-outer-sans"
+          >
+            Limpar filtros
+          </button>
+        )}
+      </div>
+
       {/* List */}
       {isLoading ? (
         <div className="flex items-center justify-center min-h-[200px]">
           <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-wine-600"></div>
         </div>
-      ) : budgets.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-200">
           <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
           </svg>
-          <p className="text-gray-400 font-outer-sans">Nenhum orçamento ainda</p>
-          <button onClick={openCreate} className="mt-3 text-wine-600 text-sm font-semibold font-outer-sans hover:underline">
-            Criar o primeiro
-          </button>
+          <p className="text-gray-400 font-outer-sans">Nenhum orçamento encontrado</p>
+          {!filterVendedor && !filterStatus && (
+            <button onClick={openCreate} className="mt-3 text-wine-600 text-sm font-semibold font-outer-sans hover:underline">
+              Criar o primeiro
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {budgets.map((b: any) => (
+          {filtered.map((b: any) => (
             <div
               key={b.id}
               className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-lg transition-all duration-300 group cursor-pointer"
@@ -152,7 +228,7 @@ export function AdminBudgets() {
               </div>
               {b.companyName && <p className="text-xs text-gray-500 font-outer-sans">{b.companyName}</p>}
               <p className="text-xs text-gray-400 mt-1 font-outer-sans">
-                Criado por: <span className="font-medium text-blue-600">{b.createdBy?.name}</span>
+                Vendedor: <span className="font-semibold text-wine-600">{b.createdBy?.name ?? '—'}</span>
               </p>
               {b.totalValue && (
                 <p className="text-lg font-bold text-gray-800 mt-3 font-outer-sans">{formatCurrency(Number(b.totalValue))}</p>
