@@ -6,6 +6,7 @@ import api from '../../api/client';
 import {
   ADMIN_ITEMS, VENDEDOR_ITEMS, PROJETISTA_ITEMS,
   loadVisibleKeys, saveVisibleKeys, isAlwaysVisible,
+  fetchPreferencesFromDB, savePreferencesToDB,
   type SidebarRole,
 } from '../../hooks/useSidebarConfig';
 
@@ -582,106 +583,151 @@ function AISettingsTab() {
 
 // ── Interface / Sidebar Config Tab ────────────────────────────────────────
 
-const ROLE_CONFIGS: { role: SidebarRole; label: string; color: string; items: readonly { key: string; label: string; description: string }[] }[] = [
-  { role: 'admin',      label: 'Administrador', color: 'wine',   items: ADMIN_ITEMS },
-  { role: 'vendedor',   label: 'Vendedor',      color: 'blue',   items: VENDEDOR_ITEMS },
-  { role: 'projetista', label: 'Projetista',    color: 'purple', items: PROJETISTA_ITEMS },
+const ROLE_META = [
+  { role: 'admin'      as SidebarRole, label: 'Administrador', color: 'wine',   items: ADMIN_ITEMS },
+  { role: 'vendedor'   as SidebarRole, label: 'Vendedor',      color: 'blue',   items: VENDEDOR_ITEMS },
+  { role: 'projetista' as SidebarRole, label: 'Projetista',    color: 'purple', items: PROJETISTA_ITEMS },
 ];
 
-function SidebarRolePanel({ role, label, color, items }: typeof ROLE_CONFIGS[number]) {
-  const [visible, setVisible] = useState<string[]>(() => loadVisibleKeys(role));
-  const [saved, setSaved] = useState(false);
+type ConfigState = Record<SidebarRole, string[]>;
 
-  const toggle = (key: string) => {
-    if (isAlwaysVisible(role, key)) return;
-    setVisible(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
-    setSaved(false);
+function defaultConfig(): ConfigState {
+  return {
+    admin:      ADMIN_ITEMS.map(i => i.key as string),
+    vendedor:   VENDEDOR_ITEMS.map(i => i.key as string),
+    projetista: PROJETISTA_ITEMS.map(i => i.key as string),
   };
-
-  const handleSave = () => {
-    saveVisibleKeys(role, visible);
-    window.dispatchEvent(new Event('sidebar-config-changed'));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  const handleReset = () => {
-    const all = items.map(i => i.key);
-    setVisible(all);
-    saveVisibleKeys(role, all);
-    window.dispatchEvent(new Event('sidebar-config-changed'));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  const accentOn  = color === 'wine' ? 'bg-wine-600 border-wine-600' : color === 'blue' ? 'bg-blue-600 border-blue-600' : 'bg-purple-600 border-purple-600';
-  const accentBtn = color === 'wine' ? 'bg-wine-600 hover:bg-wine-500' : color === 'blue' ? 'bg-blue-600 hover:bg-blue-500' : 'bg-purple-600 hover:bg-purple-500';
-
-  return (
-    <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
-        <p className="text-sm font-bold text-gray-800 font-outer-sans">{label}</p>
-        <span className="text-xs text-gray-400 font-outer-sans">{visible.length}/{items.length} itens visíveis</span>
-      </div>
-      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {items.map(item => {
-          const on = visible.includes(item.key);
-          const locked = isAlwaysVisible(role, item.key);
-          return (
-            <button
-              key={item.key}
-              onClick={() => toggle(item.key)}
-              disabled={locked}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all text-left
-                ${on ? 'border-gray-200 bg-gray-50' : 'border-dashed border-gray-200 bg-white opacity-50'}
-                ${locked ? 'cursor-not-allowed' : 'hover:border-gray-300 cursor-pointer'}`}
-            >
-              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all
-                ${on ? accentOn : 'border-gray-300 bg-white'}`}>
-                {on && (
-                  <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-gray-700 font-outer-sans truncate">
-                  {item.label}
-                  {locked && <span className="ml-1 text-[10px] text-gray-400">(fixo)</span>}
-                </p>
-                <p className="text-[10px] text-gray-400 font-outer-sans truncate">{item.description}</p>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
-        <button
-          onClick={handleReset}
-          className="text-xs text-gray-500 hover:text-gray-700 font-outer-sans underline underline-offset-2 transition-colors"
-        >
-          Restaurar padrão
-        </button>
-        <button
-          onClick={handleSave}
-          className={`px-4 py-1.5 rounded-lg text-white text-xs font-semibold font-outer-sans transition-all ${saved ? 'bg-green-500' : accentBtn}`}
-        >
-          {saved ? '✓ Salvo' : 'Salvar'}
-        </button>
-      </div>
-    </div>
-  );
 }
 
 function InterfaceTab() {
+  const [config, setConfig] = useState<ConfigState>(() => ({
+    admin:      loadVisibleKeys('admin'),
+    vendedor:   loadVisibleKeys('vendedor'),
+    projetista: loadVisibleKeys('projetista'),
+  }));
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // Carrega do banco ao abrir
+  useEffect(() => {
+    fetchPreferencesFromDB().then(prefs => {
+      if (prefs.sidebarConfig) {
+        setConfig(prev => ({
+          admin:      prefs.sidebarConfig!.admin      ?? prev.admin,
+          vendedor:   prefs.sidebarConfig!.vendedor   ?? prev.vendedor,
+          projetista: prefs.sidebarConfig!.projetista ?? prev.projetista,
+        }));
+      }
+    }).finally(() => setLoading(false));
+  }, []);
+
+  const toggle = (role: SidebarRole, key: string) => {
+    if (isAlwaysVisible(role, key)) return;
+    setSaved(false);
+    setConfig(prev => {
+      const cur = prev[role];
+      return { ...prev, [role]: cur.includes(key) ? cur.filter(k => k !== key) : [...cur, key] };
+    });
+  };
+
+  const resetRole = (role: SidebarRole) => {
+    const all = ROLE_META.find(r => r.role === role)!.items.map(i => i.key as string);
+    setSaved(false);
+    setConfig(prev => ({ ...prev, [role]: all }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // Salva no banco
+      await savePreferencesToDB({ sidebarConfig: config });
+      // Atualiza cache local para cada role
+      for (const role of ['admin', 'vendedor', 'projetista'] as SidebarRole[]) {
+        saveVisibleKeys(role, config[role]);
+      }
+      window.dispatchEvent(new Event('sidebar-config-changed'));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-7 w-7 border-b-2 border-wine-600" /></div>;
+  }
+
   return (
     <div className="space-y-5">
       <p className="text-sm text-gray-500 font-outer-sans">
         Escolha quais itens aparecem na barra lateral de cada perfil. Itens marcados como <strong>fixo</strong> não podem ser removidos.
       </p>
-      {ROLE_CONFIGS.map(cfg => (
-        <SidebarRolePanel key={cfg.role} {...cfg} />
-      ))}
+
+      {ROLE_META.map(({ role, label, color, items }) => {
+        const visible = config[role];
+        const accentOn = color === 'wine' ? 'bg-wine-600 border-wine-600' : color === 'blue' ? 'bg-blue-600 border-blue-600' : 'bg-purple-600 border-purple-600';
+
+        return (
+          <div key={role} className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
+              <p className="text-sm font-bold text-gray-800 font-outer-sans">{label}</p>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-400 font-outer-sans">{visible.length}/{items.length} visíveis</span>
+                <button
+                  onClick={() => resetRole(role)}
+                  className="text-xs text-gray-400 hover:text-gray-600 font-outer-sans underline underline-offset-2 transition-colors"
+                >
+                  Restaurar padrão
+                </button>
+              </div>
+            </div>
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {items.map(item => {
+                const on = visible.includes(item.key as string);
+                const locked = isAlwaysVisible(role, item.key as string);
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => toggle(role, item.key as string)}
+                    disabled={locked}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all text-left
+                      ${on ? 'border-gray-200 bg-gray-50' : 'border-dashed border-gray-200 bg-white opacity-50'}
+                      ${locked ? 'cursor-not-allowed' : 'hover:border-gray-300 cursor-pointer'}`}
+                  >
+                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all
+                      ${on ? accentOn : 'border-gray-300 bg-white'}`}>
+                      {on && (
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-gray-700 font-outer-sans truncate">
+                        {item.label}
+                        {locked && <span className="ml-1 text-[10px] text-gray-400">(fixo)</span>}
+                      </p>
+                      <p className="text-[10px] text-gray-400 font-outer-sans truncate">{item.description}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      <div className="flex justify-end pt-2">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className={`px-6 py-2.5 rounded-xl text-white text-sm font-semibold font-outer-sans transition-all shadow-sm disabled:opacity-50
+            ${saved ? 'bg-green-500' : 'bg-wine-600 hover:bg-wine-500'}`}
+        >
+          {saved ? '✓ Configurações salvas' : saving ? 'Salvando...' : 'Salvar configurações'}
+        </button>
+      </div>
     </div>
   );
 }

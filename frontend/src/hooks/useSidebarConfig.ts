@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
+import api from '../api/client';
 
 export type SidebarRole = 'admin' | 'vendedor' | 'projetista';
 
-// All possible item keys per role
 export const ADMIN_ITEMS = [
   { key: 'dashboard',   label: 'Dashboard',    description: 'Visão geral' },
   { key: 'stand',       label: 'Stands',       description: 'Fotos e atualizações' },
@@ -37,16 +37,13 @@ export const PROJETISTA_ITEMS = [
   { key: 'ceniq',     label: 'Ceniq IA',  description: 'Design de stands com IA' },
 ] as const;
 
-// Keys that can never be hidden (always required)
 const ALWAYS_VISIBLE: Record<SidebarRole, string[]> = {
   admin:      ['dashboard', 'settings'],
   vendedor:   ['dashboard'],
   projetista: ['dashboard'],
 };
 
-function storageKey(role: SidebarRole) {
-  return `sidebar_config_${role}`;
-}
+const CACHE_KEY = (role: SidebarRole) => `sidebar_config_${role}`;
 
 function defaultVisible(role: SidebarRole): string[] {
   if (role === 'admin')      return ADMIN_ITEMS.map(i => i.key as string);
@@ -55,29 +52,66 @@ function defaultVisible(role: SidebarRole): string[] {
   return [];
 }
 
+function mergeForced(role: SidebarRole, keys: string[]): string[] {
+  return Array.from(new Set([...ALWAYS_VISIBLE[role], ...keys]));
+}
+
+// ── Cache local (usado enquanto o banco não responde) ─────────────────────
+
 export function loadVisibleKeys(role: SidebarRole): string[] {
   try {
-    const raw = localStorage.getItem(storageKey(role));
+    const raw = localStorage.getItem(CACHE_KEY(role));
     if (!raw) return defaultVisible(role);
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return defaultVisible(role);
-    // Always include forced-visible items
-    const forced = ALWAYS_VISIBLE[role];
-    const merged = Array.from(new Set([...forced, ...parsed]));
-    return merged;
+    return mergeForced(role, parsed);
   } catch {
     return defaultVisible(role);
   }
 }
 
-export function saveVisibleKeys(role: SidebarRole, keys: string[]) {
-  const forced = ALWAYS_VISIBLE[role];
-  const merged = Array.from(new Set([...forced, ...keys]));
-  localStorage.setItem(storageKey(role), JSON.stringify(merged));
+function cacheVisibleKeys(role: SidebarRole, keys: string[]) {
+  localStorage.setItem(CACHE_KEY(role), JSON.stringify(mergeForced(role, keys)));
+}
+
+// ── API ───────────────────────────────────────────────────────────────────
+
+type PreferencesPayload = { sidebarConfig?: Partial<Record<SidebarRole, string[]>> };
+
+export async function fetchPreferencesFromDB(): Promise<PreferencesPayload> {
+  try {
+    const r = await api.get('/admin/preferences');
+    return (r.data as PreferencesPayload) ?? {};
+  } catch {
+    return {};
+  }
+}
+
+export async function savePreferencesToDB(prefs: PreferencesPayload): Promise<void> {
+  await api.patch('/admin/preferences', { preferences: prefs });
+}
+
+// Carrega do banco e sincroniza o cache local
+export async function syncPreferencesFromDB(): Promise<void> {
+  const prefs = await fetchPreferencesFromDB();
+  if (prefs.sidebarConfig) {
+    for (const role of ['admin', 'vendedor', 'projetista'] as SidebarRole[]) {
+      const keys = prefs.sidebarConfig[role];
+      if (Array.isArray(keys)) {
+        cacheVisibleKeys(role, keys);
+      }
+    }
+    window.dispatchEvent(new Event('sidebar-config-changed'));
+  }
 }
 
 export function isAlwaysVisible(role: SidebarRole, key: string): boolean {
   return ALWAYS_VISIBLE[role].includes(key);
+}
+
+export function saveVisibleKeys(role: SidebarRole, keys: string[]) {
+  const merged = mergeForced(role, keys);
+  cacheVisibleKeys(role, merged);
 }
 
 export function useSidebarConfig(role: SidebarRole) {

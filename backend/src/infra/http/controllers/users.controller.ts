@@ -167,6 +167,29 @@ const deleteAdminSchema = z.object({
   }),
 });
 
+export const getPreferences = async (req: Request, res: Response) => {
+  const userId = req.auth!.userId;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { preferences: true },
+  });
+  return res.json(user?.preferences ?? {});
+};
+
+export const updatePreferences = async (req: Request, res: Response) => {
+  const userId = req.auth!.userId;
+  const { preferences } = req.body as { preferences: Record<string, unknown> };
+  if (!preferences || typeof preferences !== 'object') {
+    return res.status(400).json({ message: 'preferences deve ser um objeto' });
+  }
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { preferences },
+    select: { preferences: true },
+  });
+  return res.json(user.preferences ?? {});
+};
+
 export const updateProfile = async (req: Request, res: Response) => {
   const userId = req.auth!.userId;
   const { name, avatar } = req.body as { name?: string; avatar?: string };

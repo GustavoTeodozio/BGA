@@ -1,6 +1,7 @@
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/auth.store';
+import { syncPreferencesFromDB } from '../../hooks/useSidebarConfig';
 import { AdminSidebar } from '../../components/admin/AdminSidebar';
 import { AdminDashboardHome } from './AdminDashboardHome';
 import { KanbanBoard } from './KanbanBoard';
@@ -59,6 +60,9 @@ export function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
+
+  // Sincroniza config de sidebar do banco ao carregar o painel
+  useEffect(() => { syncPreferencesFromDB(); }, []);
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
