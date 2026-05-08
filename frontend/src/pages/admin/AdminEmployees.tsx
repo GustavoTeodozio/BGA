@@ -443,10 +443,6 @@ function TabPresencas({ employees, month, year, onMonthChange }: TabPresencasPro
     else onMonthChange(month + 1, year);
   };
 
-  // Show only first 15 days and second 15 days in separate rows for readability
-  const firstHalf = days.slice(0, 16);
-  const secondHalf = days.slice(16);
-
   return (
     <div>
       <div className="flex items-center gap-3 mb-5">
@@ -475,9 +471,17 @@ function TabPresencas({ employees, month, year, onMonthChange }: TabPresencasPro
               return a.present && d.getUTCMonth() + 1 === month && d.getUTCFullYear() === year;
             }).length;
 
+            const monthAdvances = emp.advances.filter((adv) => {
+              const d = new Date(adv.date);
+              return d.getUTCMonth() + 1 === month && d.getUTCFullYear() === year;
+            }).reduce((sum, adv) => sum + adv.amount, 0);
+            const grossAmount = presentTotal * (emp.dailyRate || 0);
+            const netAmount = grossAmount - monthAdvances;
+
             return (
               <div key={emp.id} className="bg-white rounded-xl border border-gray-100 p-4">
-                <div className="flex items-center justify-between mb-3">
+                {/* Header: nome + totalizador */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-wine-600 flex items-center justify-center flex-shrink-0">
                       <span className="text-white text-xs font-bold font-outer-sans">{emp.name.charAt(0)}</span>
@@ -487,43 +491,68 @@ function TabPresencas({ employees, month, year, onMonthChange }: TabPresencasPro
                       <p className="text-xs text-gray-400 font-outer-sans">{emp.role || 'Sem cargo'}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs font-outer-sans text-gray-500">Total no mês</p>
-                    <p className="text-sm font-bold text-wine-600 font-outer-sans">{presentTotal} dias</p>
+                  <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+                    <div className="text-center">
+                      <p className="text-[10px] text-gray-400 font-outer-sans">Diária</p>
+                      <p className="text-xs font-semibold text-gray-600 font-outer-sans">
+                        {(emp.dailyRate || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-gray-400 font-outer-sans">Dias</p>
+                      <p className="text-xs font-bold text-wine-600 font-outer-sans">{presentTotal}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-gray-400 font-outer-sans">Vales</p>
+                      <p className="text-xs font-semibold text-red-500 font-outer-sans">
+                        -{monthAdvances.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-gray-400 font-outer-sans">A receber</p>
+                      <p className={`text-sm font-bold font-outer-sans ${netAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {netAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  {[firstHalf, secondHalf].filter(h => h.length > 0).map((half, hi) => (
-                    <div key={hi} className="flex flex-wrap gap-1">
-                      {half.map((day) => {
-                        const att = getPresence(emp, day);
-                        const isPresent = att?.present === true;
-                        const isAbsent = att?.present === false;
-                        return (
-                          <button
-                            key={day}
-                            onClick={() => toggleAttendance(emp.id, day, att?.present)}
-                            title={`Dia ${day}`}
-                            className={`w-7 h-7 rounded-lg text-[11px] font-bold font-outer-sans transition-all border
-                              ${isPresent
-                                ? 'bg-green-500 text-white border-green-500 hover:bg-green-600'
-                                : isAbsent
-                                  ? 'bg-red-100 text-red-500 border-red-200 hover:bg-red-200'
-                                  : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100'
-                              }`}
-                          >
-                            {day}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ))}
+                {/* Day buttons — scrollable on mobile */}
+                <div className="overflow-x-auto pb-1">
+                  <div className="flex gap-1 min-w-max">
+                    {days.map((day) => {
+                      const att = getPresence(emp, day);
+                      const isPresent = att?.present === true;
+                      const isAbsent = att?.present === false;
+                      return (
+                        <button
+                          key={day}
+                          onClick={() => toggleAttendance(emp.id, day, att?.present)}
+                          title={`Dia ${day}`}
+                          className={`w-7 h-7 rounded-lg text-[11px] font-bold font-outer-sans transition-all border flex-shrink-0
+                            ${isPresent
+                              ? 'bg-green-500 text-white border-green-500 hover:bg-green-600'
+                              : isAbsent
+                                ? 'bg-red-100 text-red-500 border-red-200 hover:bg-red-200'
+                                : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100'
+                            }`}
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-3 mt-2 text-[10px] text-gray-400 font-outer-sans">
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-green-500 inline-block" /> Presente</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-gray-200 inline-block" /> Não marcado</span>
+                {/* Cálculo detalhado + legenda */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-2">
+                  <div className="flex items-center gap-3 text-[10px] text-gray-400 font-outer-sans">
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-green-500 inline-block" /> Presente</span>
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-gray-200 inline-block" /> Não marcado</span>
+                  </div>
+                  <p className="text-[10px] text-gray-400 font-outer-sans">
+                    {presentTotal} dias × {(emp.dailyRate || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} − vales = <span className={`font-semibold ${netAmount >= 0 ? 'text-green-600' : 'text-red-500'}`}>{netAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                  </p>
                 </div>
               </div>
             );
