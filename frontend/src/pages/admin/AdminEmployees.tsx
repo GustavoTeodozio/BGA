@@ -76,6 +76,61 @@ function getDaysInMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate();
 }
 
+function exportPresencasCSV(employees: Employee[], month: number, year: number) {
+  const daysInMonth = getDaysInMonth(year, month);
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const monthLabel = `${String(month).padStart(2, '0')}/${year}`;
+
+  const getPresent = (emp: Employee, day: number): boolean => {
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const att = emp.attendances.find((a) => {
+      const d = new Date(a.date);
+      const aStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+      return aStr === dateStr;
+    });
+    return att?.present === true;
+  };
+
+  const dayHeaders = days.map((d) => `Dia ${d}`).join(';');
+  const header = `Funcionario;Cargo;Diaria;${dayHeaders};Total Dias;Bruto;Vales;A Receber`;
+
+  const rows = employees.map((emp) => {
+    const dailyRate = parseFloat(emp.dailyRate) || 0;
+    const dayCols = days.map((d) => (getPresent(emp, d) ? 'P' : '')).join(';');
+    const presentTotal = days.filter((d) => getPresent(emp, d)).length;
+    const monthAdvances = emp.advances
+      .filter((adv) => {
+        const d = new Date(adv.date);
+        return d.getUTCMonth() + 1 === month && d.getUTCFullYear() === year;
+      })
+      .reduce((sum, adv) => sum + parseFloat(String(adv.amount)), 0);
+    const gross = presentTotal * dailyRate;
+    const net = gross - monthAdvances;
+
+    const fmt = (v: number) => v.toFixed(2).replace('.', ',');
+
+    return [
+      emp.name,
+      emp.role || '',
+      fmt(dailyRate),
+      dayCols,
+      presentTotal,
+      fmt(gross),
+      fmt(monthAdvances),
+      fmt(net),
+    ].join(';');
+  });
+
+  const csv = '﻿' + [header, ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `presencas_${monthLabel.replace('/', '-')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function calcStats(emp: Employee, month: number, year: number) {
   const presentDays = emp.attendances.filter((a) => {
     const d = new Date(a.date);
@@ -445,19 +500,30 @@ function TabPresencas({ employees, month, year, onMonthChange }: TabPresencasPro
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-5">
-        <button onClick={prevMonth} className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+      <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <button onClick={prevMonth} className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <span className="text-sm font-bold text-gray-700 font-outer-sans min-w-[120px] text-center">
+            {MONTH_NAMES[month - 1]} {year}
+          </span>
+          <button onClick={nextMonth} className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+        <button
+          onClick={() => exportPresencasCSV(employees, month, year)}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-green-200 bg-green-50 text-green-700 text-xs font-semibold hover:bg-green-100 transition-colors font-outer-sans"
+        >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
-        </button>
-        <span className="text-sm font-bold text-gray-700 font-outer-sans min-w-[120px] text-center">
-          {MONTH_NAMES[month - 1]} {year}
-        </span>
-        <button onClick={nextMonth} className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+          Exportar Excel
         </button>
       </div>
 
