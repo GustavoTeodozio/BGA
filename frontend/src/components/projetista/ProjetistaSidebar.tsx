@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { UserAvatar } from '../UserAvatar';
 import { useAuthStore } from '../../store/auth.store';
 import api from '../../api/client';
+import { loadVisibleKeys } from '../../hooks/useSidebarConfig';
 
 interface ProjetistaSidebarProps {
   isOpen: boolean;
@@ -17,6 +18,18 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
   const [editAvatar, setEditAvatar] = useState(user?.avatar || '');
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [visibleKeys, setVisibleKeys] = useState<string[]>(() => loadVisibleKeys('projetista'));
+
+  useEffect(() => {
+    const onStorage = () => setVisibleKeys(loadVisibleKeys('projetista'));
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('sidebar-config-changed', onStorage);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('sidebar-config-changed', onStorage);
+    };
+  }, []);
 
   const isActive = (path: string) => {
     if (path === '/projetista') return location.pathname === '/projetista';
@@ -72,17 +85,21 @@ export function ProjetistaSidebar({ isOpen, onClose }: ProjetistaSidebarProps) {
     </svg>
   );
 
-  const sections = [
-    { label: null,        items: [{ path: '/projetista',          label: 'Dashboard', icon: DashboardIcon, description: 'Visão geral' }] },
+  const allSections = [
+    { label: null,        items: [{ key: 'dashboard', path: '/projetista',          label: 'Dashboard', icon: DashboardIcon, description: 'Visão geral' }] },
     { label: 'TRABALHO',  items: [
-      { path: '/projetista/notes',    label: 'Anotações', icon: NotesIcon,    description: 'Suas anotações' },
-      { path: '/projetista/projects', label: 'Projetos',  icon: ProjectsIcon, description: 'Gerenciar projetos' },
-      { path: '/projetista/kanban',   label: 'Kanban',    icon: KanbanIcon,   description: 'Fluxo de tarefas' },
+      { key: 'notes',    path: '/projetista/notes',    label: 'Anotações', icon: NotesIcon,    description: 'Suas anotações' },
+      { key: 'projects', path: '/projetista/projects', label: 'Projetos',  icon: ProjectsIcon, description: 'Gerenciar projetos' },
+      { key: 'kanban',   path: '/projetista/kanban',   label: 'Kanban',    icon: KanbanIcon,   description: 'Fluxo de tarefas' },
     ]},
     { label: 'FERRAMENTAS', items: [
-      { path: '/projetista/ceniq', label: 'Ceniq IA', icon: CeniqIcon, description: 'Design de stands com IA' },
+      { key: 'ceniq', path: '/projetista/ceniq', label: 'Ceniq IA', icon: CeniqIcon, description: 'Design de stands com IA' },
     ]},
   ];
+
+  const sections = allSections
+    .map(s => ({ ...s, items: s.items.filter(i => visibleKeys.includes(i.key)) }))
+    .filter(s => s.items.length > 0);
 
   return (
     <>

@@ -3,6 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/auth.store';
 import { AdminManagement } from '../../components/admin/AdminManagement';
 import api from '../../api/client';
+import {
+  ADMIN_ITEMS, VENDEDOR_ITEMS, PROJETISTA_ITEMS,
+  loadVisibleKeys, saveVisibleKeys, isAlwaysVisible,
+  type SidebarRole,
+} from '../../hooks/useSidebarConfig';
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 const UserIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
@@ -575,17 +580,130 @@ function AISettingsTab() {
   );
 }
 
+// ── Interface / Sidebar Config Tab ────────────────────────────────────────
+
+const ROLE_CONFIGS: { role: SidebarRole; label: string; color: string; items: readonly { key: string; label: string; description: string }[] }[] = [
+  { role: 'admin',      label: 'Administrador', color: 'wine',   items: ADMIN_ITEMS },
+  { role: 'vendedor',   label: 'Vendedor',      color: 'blue',   items: VENDEDOR_ITEMS },
+  { role: 'projetista', label: 'Projetista',    color: 'purple', items: PROJETISTA_ITEMS },
+];
+
+function SidebarRolePanel({ role, label, color, items }: typeof ROLE_CONFIGS[number]) {
+  const [visible, setVisible] = useState<string[]>(() => loadVisibleKeys(role));
+  const [saved, setSaved] = useState(false);
+
+  const toggle = (key: string) => {
+    if (isAlwaysVisible(role, key)) return;
+    setVisible(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+    setSaved(false);
+  };
+
+  const handleSave = () => {
+    saveVisibleKeys(role, visible);
+    window.dispatchEvent(new Event('sidebar-config-changed'));
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleReset = () => {
+    const all = items.map(i => i.key);
+    setVisible(all);
+    saveVisibleKeys(role, all);
+    window.dispatchEvent(new Event('sidebar-config-changed'));
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const accentOn  = color === 'wine' ? 'bg-wine-600 border-wine-600' : color === 'blue' ? 'bg-blue-600 border-blue-600' : 'bg-purple-600 border-purple-600';
+  const accentBtn = color === 'wine' ? 'bg-wine-600 hover:bg-wine-500' : color === 'blue' ? 'bg-blue-600 hover:bg-blue-500' : 'bg-purple-600 hover:bg-purple-500';
+
+  return (
+    <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
+        <p className="text-sm font-bold text-gray-800 font-outer-sans">{label}</p>
+        <span className="text-xs text-gray-400 font-outer-sans">{visible.length}/{items.length} itens visíveis</span>
+      </div>
+      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {items.map(item => {
+          const on = visible.includes(item.key);
+          const locked = isAlwaysVisible(role, item.key);
+          return (
+            <button
+              key={item.key}
+              onClick={() => toggle(item.key)}
+              disabled={locked}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all text-left
+                ${on ? 'border-gray-200 bg-gray-50' : 'border-dashed border-gray-200 bg-white opacity-50'}
+                ${locked ? 'cursor-not-allowed' : 'hover:border-gray-300 cursor-pointer'}`}
+            >
+              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all
+                ${on ? accentOn : 'border-gray-300 bg-white'}`}>
+                {on && (
+                  <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-gray-700 font-outer-sans truncate">
+                  {item.label}
+                  {locked && <span className="ml-1 text-[10px] text-gray-400">(fixo)</span>}
+                </p>
+                <p className="text-[10px] text-gray-400 font-outer-sans truncate">{item.description}</p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+        <button
+          onClick={handleReset}
+          className="text-xs text-gray-500 hover:text-gray-700 font-outer-sans underline underline-offset-2 transition-colors"
+        >
+          Restaurar padrão
+        </button>
+        <button
+          onClick={handleSave}
+          className={`px-4 py-1.5 rounded-lg text-white text-xs font-semibold font-outer-sans transition-all ${saved ? 'bg-green-500' : accentBtn}`}
+        >
+          {saved ? '✓ Salvo' : 'Salvar'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function InterfaceTab() {
+  return (
+    <div className="space-y-5">
+      <p className="text-sm text-gray-500 font-outer-sans">
+        Escolha quais itens aparecem na barra lateral de cada perfil. Itens marcados como <strong>fixo</strong> não podem ser removidos.
+      </p>
+      {ROLE_CONFIGS.map(cfg => (
+        <SidebarRolePanel key={cfg.role} {...cfg} />
+      ))}
+    </div>
+  );
+}
+
 // ── Main Settings Page ─────────────────────────────────────────────────────
+const LayoutIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+  </svg>
+);
+
 export function Settings() {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'profile' | 'general' | 'ai' | 'admins'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'general' | 'ai' | 'admins' | 'interface'>('profile');
   const [profileData, setProfileData] = useState({ name: user?.name || '', email: user?.email || '', phone: '' });
 
   const tabs = [
-    { id: 'profile' as const, label: 'Perfil',        icon: UserIcon },
-    { id: 'general' as const, label: 'Geral',          icon: GearIcon },
-    { id: 'ai'      as const, label: 'Integrações IA', icon: AIIcon },
-    { id: 'admins'  as const, label: 'Equipe',         icon: UserIcon },
+    { id: 'profile'   as const, label: 'Perfil',        icon: UserIcon },
+    { id: 'general'   as const, label: 'Geral',          icon: GearIcon },
+    { id: 'interface' as const, label: 'Interface',      icon: LayoutIcon },
+    { id: 'ai'        as const, label: 'Integrações IA', icon: AIIcon },
+    { id: 'admins'    as const, label: 'Equipe',         icon: UserIcon },
   ];
 
   return (
@@ -686,6 +804,21 @@ export function Settings() {
                 </div>
               </div>
               <AISettingsTab />
+            </div>
+          )}
+
+          {activeTab === 'interface' && (
+            <div className="card-gradient animate-slide-up">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                  <LayoutIcon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800 font-outer-sans">Interface</h2>
+                  <p className="text-sm text-gray-500 font-outer-sans">Configure o que aparece na sidebar de cada perfil</p>
+                </div>
+              </div>
+              <InterfaceTab />
             </div>
           )}
 

@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { UserAvatar } from '../UserAvatar';
 import { useAuthStore } from '../../store/auth.store';
 import api from '../../api/client';
+import { loadVisibleKeys } from '../../hooks/useSidebarConfig';
 
 interface VendedorSidebarProps {
   isOpen: boolean;
@@ -17,6 +18,18 @@ export function VendedorSidebar({ isOpen, onClose }: VendedorSidebarProps) {
   const [editAvatar, setEditAvatar] = useState(user?.avatar || '');
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [visibleKeys, setVisibleKeys] = useState<string[]>(() => loadVisibleKeys('vendedor'));
+
+  useEffect(() => {
+    const onStorage = () => setVisibleKeys(loadVisibleKeys('vendedor'));
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('sidebar-config-changed', onStorage);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('sidebar-config-changed', onStorage);
+    };
+  }, []);
 
   const isActive = (path: string) => {
     if (path === '/vendedor') return location.pathname === '/vendedor';
@@ -97,22 +110,24 @@ export function VendedorSidebar({ isOpen, onClose }: VendedorSidebarProps) {
     </svg>
   );
 
-  const menuItems = [
-    { path: '/vendedor',             label: 'Dashboard',    icon: DashboardIcon, description: 'Visão geral' },
-    { path: '/vendedor/crm',         label: 'CRM Pipeline', icon: CRMIcon,       description: 'Funil de vendas' },
-    { path: '/vendedor/crm-agenda',  label: 'Agenda CRM',   icon: AgendaIcon,    description: 'Atividades do dia' },
-    { path: '/vendedor/stands',      label: 'Stands',       icon: StandsIcon,    description: 'Fotos e atualizações' },
-    { path: '/vendedor/clients',     label: 'Clientes',     icon: ClientsIcon,   description: 'Cadastrar e visualizar' },
-    { path: '/vendedor/notes',       label: 'Anotações',    icon: NotesIcon,     description: 'Suas anotações' },
-    { path: '/vendedor/budgets',     label: 'Orçamentos',   icon: BudgetIcon,    description: 'Criar e gerenciar' },
-    { path: '/vendedor/sales',       label: 'Vendas',       icon: SalesIcon,     description: 'Histórico de vendas' },
+  const allMenuItems = [
+    { key: 'dashboard',  path: '/vendedor',             label: 'Dashboard',    icon: DashboardIcon, description: 'Visão geral' },
+    { key: 'crm',        path: '/vendedor/crm',         label: 'CRM Pipeline', icon: CRMIcon,       description: 'Funil de vendas' },
+    { key: 'crm-agenda', path: '/vendedor/crm-agenda',  label: 'Agenda CRM',   icon: AgendaIcon,    description: 'Atividades do dia' },
+    { key: 'stands',     path: '/vendedor/stands',      label: 'Stands',       icon: StandsIcon,    description: 'Fotos e atualizações' },
+    { key: 'clients',    path: '/vendedor/clients',     label: 'Clientes',     icon: ClientsIcon,   description: 'Cadastrar e visualizar' },
+    { key: 'notes',      path: '/vendedor/notes',       label: 'Anotações',    icon: NotesIcon,     description: 'Suas anotações' },
+    { key: 'budgets',    path: '/vendedor/budgets',     label: 'Orçamentos',   icon: BudgetIcon,    description: 'Criar e gerenciar' },
+    { key: 'sales',      path: '/vendedor/sales',       label: 'Vendas',       icon: SalesIcon,     description: 'Histórico de vendas' },
   ];
 
+  const menuItems = allMenuItems.filter(i => visibleKeys.includes(i.key));
+
   const sections = [
-    { label: null,       items: menuItems.slice(0, 1) },
-    { label: 'CRM',      items: menuItems.slice(1, 4) },
-    { label: 'TRABALHO', items: menuItems.slice(4, 8) },
-  ];
+    { label: null,       items: menuItems.filter(i => ['dashboard'].includes(i.key)) },
+    { label: 'CRM',      items: menuItems.filter(i => ['crm', 'crm-agenda', 'stands'].includes(i.key)) },
+    { label: 'TRABALHO', items: menuItems.filter(i => ['clients', 'notes', 'budgets', 'sales'].includes(i.key)) },
+  ].filter(s => s.items.length > 0);
 
   return (
     <>

@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../../store/auth.store';
 import api from '../../api/client';
+import { loadVisibleKeys } from '../../hooks/useSidebarConfig';
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -16,6 +17,17 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const [editAvatar, setEditAvatar] = useState(user?.avatar || '');
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [visibleKeys, setVisibleKeys] = useState<string[]>(() => loadVisibleKeys('admin'));
+
+  useEffect(() => {
+    const onStorage = () => setVisibleKeys(loadVisibleKeys('admin'));
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('sidebar-config-changed', onStorage);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('sidebar-config-changed', onStorage);
+    };
+  }, []);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -115,28 +127,32 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     </svg>
   );
 
-  const sections = [
-    { label: null,       items: [{ path: '/admin',            label: 'Dashboard',    icon: DashboardIcon, description: 'Visão geral' }] },
+  const allSections = [
+    { label: null,       items: [{ key: 'dashboard', path: '/admin',            label: 'Dashboard',    icon: DashboardIcon, description: 'Visão geral' }] },
     { label: 'TRABALHO', items: [
-      { path: '/admin/stand',  label: 'Stands',             icon: StandIcon,   description: 'Fotos e atualizações' },
+      { key: 'stand',      path: '/admin/stand',  label: 'Stands',             icon: StandIcon,   description: 'Fotos e atualizações' },
     ]},
     { label: 'CRM',      items: [
-      { path: '/admin/crm',        label: 'Pipeline', icon: CRMIcon,    description: 'Funil de vendas' },
-      { path: '/admin/crm-agenda', label: 'Agenda',   icon: AgendaIcon, description: 'Atividades do dia' },
+      { key: 'crm',        path: '/admin/crm',        label: 'Pipeline', icon: CRMIcon,    description: 'Funil de vendas' },
+      { key: 'crm-agenda', path: '/admin/crm-agenda', label: 'Agenda',   icon: AgendaIcon, description: 'Atividades do dia' },
     ]},
     { label: 'GESTÃO', items: [
-      { path: '/admin/clients',    label: 'Clientes',      icon: ClientsIcon,    description: 'Gestão de clientes' },
-      { path: '/admin/notes',      label: 'Anotações',     icon: NotesIcon,      description: 'Todas as anotações' },
-      { path: '/admin/budgets',    label: 'Orçamentos',    icon: BudgetIcon,     description: 'Todos os orçamentos' },
-      { path: '/admin/projects',   label: 'Projetos',      icon: ProjectsIcon,   description: 'Todos os projetos' },
-      { path: '/admin/team',       label: 'Equipe',        icon: TeamIcon,       description: 'Vendedores e projetistas' },
-      { path: '/admin/employees',  label: 'Funcionários',  icon: EmployeesIcon,  description: 'Equipe de montagem' },
+      { key: 'clients',   path: '/admin/clients',    label: 'Clientes',      icon: ClientsIcon,    description: 'Gestão de clientes' },
+      { key: 'notes',     path: '/admin/notes',      label: 'Anotações',     icon: NotesIcon,      description: 'Todas as anotações' },
+      { key: 'budgets',   path: '/admin/budgets',    label: 'Orçamentos',    icon: BudgetIcon,     description: 'Todos os orçamentos' },
+      { key: 'projects',  path: '/admin/projects',   label: 'Projetos',      icon: ProjectsIcon,   description: 'Todos os projetos' },
+      { key: 'team',      path: '/admin/team',       label: 'Equipe',        icon: TeamIcon,       description: 'Vendedores e projetistas' },
+      { key: 'employees', path: '/admin/employees',  label: 'Funcionários',  icon: EmployeesIcon,  description: 'Equipe de montagem' },
     ]},
     { label: 'FERRAMENTAS', items: [
-      { path: '/admin/ceniq',    label: 'Ceniq IA',      icon: CeniqIcon,    description: 'Design de stands com IA' },
+      { key: 'ceniq',    path: '/admin/ceniq',    label: 'Ceniq IA',      icon: CeniqIcon,    description: 'Design de stands com IA' },
     ]},
-    { label: 'SISTEMA', items: [{ path: '/admin/settings', label: 'Configurações', icon: SettingsIcon, description: 'Perfil e API' }] },
+    { label: 'SISTEMA', items: [{ key: 'settings', path: '/admin/settings', label: 'Configurações', icon: SettingsIcon, description: 'Perfil e API' }] },
   ];
+
+  const sections = allSections
+    .map(s => ({ ...s, items: s.items.filter(i => visibleKeys.includes(i.key)) }))
+    .filter(s => s.items.length > 0);
 
   return (
     <>
