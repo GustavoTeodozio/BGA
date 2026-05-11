@@ -9,6 +9,7 @@ import { VendedorNotes } from './VendedorNotes';
 import { VendedorBudgets } from './VendedorBudgets';
 import { VendedorSales } from './VendedorSales';
 import { VendedorStands } from './VendedorStands';
+import { VendedorProjects } from './VendedorProjects';
 import { CRMPipeline } from '../admin/CRMPipeline';
 import { CRMAgenda } from '../admin/CRMAgenda';
 
@@ -21,6 +22,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/vendedor/budgets':    'Orçamentos',
   '/vendedor/sales':      'Vendas',
   '/vendedor/stands':     'Stands',
+  '/vendedor/projects':   'Projetos',
 };
 
 const s = { className: 'w-[18px] h-[18px]', fill: 'none' as const, stroke: 'currentColor', viewBox: '0 0 24 24' };
@@ -35,6 +37,7 @@ const PAGE_ICONS: Record<string, JSX.Element> = {
   '/vendedor/budgets':    <svg {...s}><path {...p} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
   '/vendedor/sales':      <svg {...s}><path {...p} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
   '/vendedor/stands':     <svg {...s}><path {...p} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+  '/vendedor/projects':   <svg {...s}><path {...p} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>,
 };
 
 export function VendedorDashboard() {
@@ -139,6 +142,7 @@ export function VendedorDashboard() {
             <Route path="budgets" element={<VendedorBudgets />} />
             <Route path="sales" element={<VendedorSales />} />
             <Route path="stands" element={<VendedorStands />} />
+            <Route path="projects" element={<VendedorProjects />} />
           </Routes>
         </main>
       </div>

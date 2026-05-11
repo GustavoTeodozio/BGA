@@ -45,6 +45,16 @@ import {
 } from '../controllers/task.controller';
 import { listClients, updateClientProfile, deleteClient } from '../controllers/clients.controller';
 import { updateProfile, listTeamMembers } from '../controllers/users.controller';
+import {
+  listProjects,
+  getProject,
+  createProject,
+  updateProject,
+  deleteProject,
+  uploadFile,
+  deleteFile,
+  getVendedorProjectStats,
+} from '../controllers/projects.controller';
 import { registerClient } from '../controllers/auth.controller';
 import {
   listStages,
@@ -131,7 +141,17 @@ vendedorRoutes.delete('/clients/:clientId', asyncHandler(async (req, res, next) 
   return next();
 }), asyncHandler(deleteClient));
 
-// Membros da equipe (para compartilhamento de notas)
+// Projects (vendedor cria e direciona para projetista)
+vendedorRoutes.get('/projects/stats', asyncHandler(getVendedorProjectStats));
+vendedorRoutes.get('/projects', asyncHandler(listProjects));
+vendedorRoutes.get('/projects/:projectId', asyncHandler(getProject));
+vendedorRoutes.post('/projects', asyncHandler(createProject));
+vendedorRoutes.patch('/projects/:projectId', asyncHandler(updateProject));
+vendedorRoutes.delete('/projects/:projectId', asyncHandler(deleteProject));
+vendedorRoutes.post('/projects/:projectId/files', upload.single('file'), asyncHandler(uploadFile));
+vendedorRoutes.delete('/projects/files/:fileId', asyncHandler(deleteFile));
+
+// Membros da equipe (para compartilhamento de notas e direcionar projetista)
 vendedorRoutes.get('/team-members', asyncHandler(listTeamMembers));
 
 // Stand Progress Tracker

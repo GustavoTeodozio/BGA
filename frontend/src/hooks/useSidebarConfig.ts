@@ -27,6 +27,7 @@ export const VENDEDOR_ITEMS = [
   { key: 'notes',      label: 'Anotações',    description: 'Suas anotações' },
   { key: 'budgets',    label: 'Orçamentos',   description: 'Criar e gerenciar' },
   { key: 'sales',      label: 'Vendas',       description: 'Histórico de vendas' },
+  { key: 'projects',   label: 'Projetos',     description: 'Direcionar para projetista' },
 ] as const;
 
 export const PROJETISTA_ITEMS = [
