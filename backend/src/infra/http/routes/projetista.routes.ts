@@ -57,14 +57,14 @@ projetistaRoutes.patch('/notes/:noteId', asyncHandler(updateNote));
 projetistaRoutes.delete('/notes/:noteId', asyncHandler(deleteNote));
 projetistaRoutes.patch('/notes/:noteId/pin', asyncHandler(togglePin));
 
-// Projects
+// Projects — rotas fixas antes das parametrizadas
+projetistaRoutes.delete('/projects/files/:fileId', asyncHandler(deleteFile));
 projetistaRoutes.get('/projects', asyncHandler(listProjects));
-projetistaRoutes.get('/projects/:projectId', asyncHandler(getProject));
 projetistaRoutes.post('/projects', asyncHandler(createProject));
+projetistaRoutes.get('/projects/:projectId', asyncHandler(getProject));
 projetistaRoutes.patch('/projects/:projectId', asyncHandler(updateProject));
 projetistaRoutes.delete('/projects/:projectId', asyncHandler(deleteProject));
 projetistaRoutes.post('/projects/:projectId/files', upload.single('file'), asyncHandler(uploadFile));
-projetistaRoutes.delete('/projects/files/:fileId', asyncHandler(deleteFile));
 
 // Tasks/Kanban
 projetistaRoutes.get('/tasks', asyncHandler(listTasks));

@@ -142,14 +142,15 @@ vendedorRoutes.delete('/clients/:clientId', asyncHandler(async (req, res, next) 
 }), asyncHandler(deleteClient));
 
 // Projects (vendedor cria e direciona para projetista)
+// rotas fixas antes das parametrizadas para evitar conflito
 vendedorRoutes.get('/projects/stats', asyncHandler(getVendedorProjectStats));
+vendedorRoutes.delete('/projects/files/:fileId', asyncHandler(deleteFile));
 vendedorRoutes.get('/projects', asyncHandler(listProjects));
-vendedorRoutes.get('/projects/:projectId', asyncHandler(getProject));
 vendedorRoutes.post('/projects', asyncHandler(createProject));
+vendedorRoutes.get('/projects/:projectId', asyncHandler(getProject));
 vendedorRoutes.patch('/projects/:projectId', asyncHandler(updateProject));
 vendedorRoutes.delete('/projects/:projectId', asyncHandler(deleteProject));
 vendedorRoutes.post('/projects/:projectId/files', upload.single('file'), asyncHandler(uploadFile));
-vendedorRoutes.delete('/projects/files/:fileId', asyncHandler(deleteFile));
 
 // Membros da equipe (para compartilhamento de notas e direcionar projetista)
 vendedorRoutes.get('/team-members', asyncHandler(listTeamMembers));

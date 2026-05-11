@@ -196,14 +196,14 @@ adminRoutes.post('/sales', asyncHandler(createSale));
 adminRoutes.patch('/sales/:saleId', asyncHandler(updateSale));
 adminRoutes.delete('/sales/:saleId', asyncHandler(deleteSale));
 
-// Projects (admin vê todos)
+// Projects (admin vê todos) — rotas fixas antes das parametrizadas
+adminRoutes.delete('/projects/files/:fileId', asyncHandler(deleteFile));
 adminRoutes.get('/projects', asyncHandler(listProjects));
-adminRoutes.get('/projects/:projectId', asyncHandler(getProject));
 adminRoutes.post('/projects', asyncHandler(createProject));
+adminRoutes.get('/projects/:projectId', asyncHandler(getProject));
 adminRoutes.patch('/projects/:projectId', asyncHandler(updateProject));
 adminRoutes.delete('/projects/:projectId', asyncHandler(deleteProject));
 adminRoutes.post('/projects/:projectId/files', upload.single('file'), asyncHandler(uploadFile));
-adminRoutes.delete('/projects/files/:fileId', asyncHandler(deleteFile));
 
 // Per-client AI settings
 adminRoutes.get('/settings/clients/:tenantId', asyncHandler(getClientAISettings));
