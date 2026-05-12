@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/client';
 import { useDialog } from '../../components/ConfirmDialog';
 
-const COMMISSION_RATE = 0.04; // 4%
+const COMMISSION_RATE = 0.04;
 
 const INSTALLMENT_OPTIONS = [1,2,3,4,5,6,7,8,9,10,11,12,18,24,36,48,60];
 
@@ -13,24 +13,53 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   PERDIDA:      { label: 'Perdida',      color: 'bg-red-100 text-red-700' },
 };
 
+const EMPTY_FORM = {
+  clientName: '',
+  companyName: '',
+  value: '',
+  installments: '1',
+  firstPaymentDate: '',
+  description: '',
+  status: 'FECHADA',
+};
+
+function addMonths(date: Date, months: number): Date {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + months);
+  return d;
+}
+
+function buildSchedule(firstPaymentDate: string, installments: number, value: number): { date: Date; amount: number }[] {
+  if (!firstPaymentDate || installments <= 1) return [];
+  const base = new Date(firstPaymentDate + 'T12:00:00');
+  const parcel = value / installments;
+  return Array.from({ length: installments }, (_, i) => ({
+    date: addMonths(base, i),
+    amount: parcel,
+  }));
+}
+
+function formatDate(d: Date) {
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 export function VendedorSales() {
   const { confirm } = useDialog();
   const qc = useQueryClient();
   const [filter, setFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ clientName: '', companyName: '', value: '', installments: '1', description: '', status: 'FECHADA' });
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ['vendedor', 'sales', filter],
     queryFn: async () => {
       const params: any = {};
       if (filter) params.status = filter;
-      const r = await api.get('/vendedor/sales', { params });
-      return r.data;
+      return (await api.get('/vendedor/sales', { params })).data;
     },
   });
 
-  // Fetch all sales (without filter) for commission totals
   const { data: allSales = [] } = useQuery({
     queryKey: ['vendedor', 'sales', ''],
     queryFn: async () => (await api.get('/vendedor/sales')).data,
@@ -50,21 +79,30 @@ export function VendedorSales() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createMut.mutate({ ...form, value: Number(form.value), installments: Number(form.installments) });
+    const payload: any = {
+      ...form,
+      value: Number(form.value),
+      installments: Number(form.installments),
+    };
+    if (!payload.firstPaymentDate) delete payload.firstPaymentDate;
+    createMut.mutate(payload);
   };
 
-  // Commission calculations from all (unfiltered) closed sales
   const closedSales = allSales.filter((s: any) => s.status === 'FECHADA');
   const totalRevenue = closedSales.reduce((sum: number, s: any) => sum + Number(s.value), 0);
   const totalCommission = totalRevenue * COMMISSION_RATE;
   const commissionCount = closedSales.length;
+
+  const inst = Number(form.installments);
+  const val = Number(form.value);
+  const previewSchedule = buildSchedule(form.firstPaymentDate, inst, val);
 
   return (
     <div className="animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
         <p className="text-gray-500 text-sm font-outer-sans">Registre e acompanhe suas vendas</p>
         <button
-          onClick={() => { setForm({ clientName: '', companyName: '', value: '', installments: '1', description: '', status: 'FECHADA' }); setShowModal(true); }}
+          onClick={() => { setForm(EMPTY_FORM); setShowModal(true); }}
           className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-green-500/25 transition-all duration-200 flex items-center gap-2 font-outer-sans whitespace-nowrap"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,6 +167,13 @@ export function VendedorSales() {
           {sales.map((s: any) => {
             const value = Number(s.value);
             const commission = s.status === 'FECHADA' ? value * COMMISSION_RATE : null;
+            const sInst = s.installments ?? 1;
+            const parcel = value / sInst;
+            const schedule = s.firstPaymentDate
+              ? buildSchedule(s.firstPaymentDate.slice(0, 10), sInst, value)
+              : [];
+            const isExpanded = expandedId === s.id;
+
             return (
               <div key={s.id} className="bg-white rounded-xl border border-gray-100 hover:shadow-lg transition-all duration-300 group">
                 <div className="p-5">
@@ -144,24 +189,47 @@ export function VendedorSales() {
 
                   <p className="text-2xl font-bold text-green-600 font-outer-sans">{fmt(value)}</p>
 
-                  {/* Installments */}
-                  {(() => {
-                    const inst = s.installments ?? 1;
-                    const parcel = value / inst;
-                    return (
-                      <div className="mt-2 flex items-center gap-1.5 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5">
-                        <svg className="w-3.5 h-3.5 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                        </svg>
-                        <span className="text-xs font-outer-sans text-blue-700">
-                          {inst === 1
-                            ? 'À vista'
-                            : <>{inst}x de <span className="font-bold">{fmt(parcel)}</span></>
-                          }
-                        </span>
+                  {/* Parcelamento badge */}
+                  <div className="mt-2 flex items-center justify-between bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                      <span className="text-xs font-outer-sans text-blue-700">
+                        {sInst === 1 ? 'À vista' : <>{sInst}x de <span className="font-bold">{fmt(parcel)}</span></>}
+                      </span>
+                    </div>
+                    {schedule.length > 0 && (
+                      <button
+                        onClick={() => setExpandedId(isExpanded ? null : s.id)}
+                        className="text-[10px] text-blue-500 font-semibold font-outer-sans hover:underline ml-2 shrink-0"
+                      >
+                        {isExpanded ? 'Ocultar' : 'Ver datas'}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Schedule expandido */}
+                  {isExpanded && schedule.length > 0 && (
+                    <div className="mt-2 border border-blue-100 rounded-lg overflow-hidden">
+                      <div className="bg-blue-50 px-3 py-1.5">
+                        <p className="text-[10px] font-semibold text-blue-600 font-outer-sans uppercase tracking-wide">Cronograma de pagamentos</p>
                       </div>
-                    );
-                  })()}
+                      <div className="divide-y divide-gray-50 max-h-48 overflow-y-auto">
+                        {schedule.map((item, i) => (
+                          <div key={i} className="flex items-center justify-between px-3 py-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold font-outer-sans flex items-center justify-center shrink-0">
+                                {i + 1}
+                              </span>
+                              <span className="text-xs text-gray-600 font-outer-sans">{formatDate(item.date)}</span>
+                            </div>
+                            <span className="text-xs font-semibold text-gray-700 font-outer-sans">{fmt(item.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Commission badge */}
                   {commission !== null ? (
@@ -205,9 +273,9 @@ export function VendedorSales() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleSubmit}>
-              <div className="p-6 border-b border-gray-100">
+              <div className="p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
                 <h2 className="text-lg font-bold text-gray-800 font-outer-sans">Registrar Venda</h2>
               </div>
               <div className="p-6 space-y-4">
@@ -228,18 +296,20 @@ export function VendedorSales() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 font-outer-sans">Valor (R$) *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 font-outer-sans">Valor Total (R$) *</label>
                   <input
                     type="number" step="0.01" min="0.01" required value={form.value}
                     onChange={(e) => setForm({ ...form, value: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent font-outer-sans"
                   />
-                  {form.value && Number(form.value) > 0 && (
+                  {form.value && val > 0 && (
                     <p className="text-xs text-emerald-600 mt-1 font-outer-sans">
-                      Comissão estimada (4%): {fmt(Number(form.value) * COMMISSION_RATE)}
+                      Comissão estimada (4%): {fmt(val * COMMISSION_RATE)}
                     </p>
                   )}
                 </div>
+
+                {/* Parcelamento */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1 font-outer-sans">Parcelamento</label>
                   <select
@@ -249,16 +319,57 @@ export function VendedorSales() {
                   >
                     {INSTALLMENT_OPTIONS.map(n => (
                       <option key={n} value={n}>
-                        {n === 1 ? 'À vista' : `${n}x${form.value && Number(form.value) > 0 ? ` — ${fmt(Number(form.value) / n)} / parcela` : ''}`}
+                        {n === 1
+                          ? 'À vista (sem parcelamento)'
+                          : `${n}x${val > 0 ? ` — ${fmt(val / n)} / parcela` : ''}`}
                       </option>
                     ))}
                   </select>
-                  {form.value && Number(form.value) > 0 && Number(form.installments) > 1 && (
-                    <p className="text-xs text-blue-600 mt-1 font-outer-sans">
-                      {form.installments}x de {fmt(Number(form.value) / Number(form.installments))}
-                    </p>
-                  )}
                 </div>
+
+                {/* Data do 1º pagamento — aparece só quando parcelado */}
+                {inst > 1 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 font-outer-sans">
+                      Data do 1º pagamento
+                    </label>
+                    <input
+                      type="date" value={form.firstPaymentDate}
+                      onChange={(e) => setForm({ ...form, firstPaymentDate: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent font-outer-sans"
+                    />
+                    {/* Preview do cronograma */}
+                    {previewSchedule.length > 0 && (
+                      <div className="mt-2 border border-blue-100 rounded-xl overflow-hidden">
+                        <div className="bg-blue-50 px-3 py-2 flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-[10px] font-semibold text-blue-600 font-outer-sans uppercase tracking-wide">
+                            Cronograma de pagamentos
+                          </span>
+                        </div>
+                        <div className="divide-y divide-gray-50 max-h-52 overflow-y-auto">
+                          {previewSchedule.map((item, i) => (
+                            <div key={i} className="flex items-center justify-between px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold font-outer-sans flex items-center justify-center shrink-0">
+                                  {i + 1}
+                                </span>
+                                <span className="text-xs text-gray-600 font-outer-sans">{formatDate(item.date)}</span>
+                              </div>
+                              <span className="text-xs font-semibold text-gray-700 font-outer-sans">{fmt(item.amount)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {inst > 1 && !form.firstPaymentDate && (
+                      <p className="text-xs text-gray-400 mt-1 font-outer-sans">Informe a data para ver o cronograma</p>
+                    )}
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1 font-outer-sans">Status</label>
                   <select
@@ -280,7 +391,7 @@ export function VendedorSales() {
                   />
                 </div>
               </div>
-              <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+              <div className="p-6 border-t border-gray-100 flex justify-end gap-3 sticky bottom-0 bg-white">
                 <button
                   type="button" onClick={() => setShowModal(false)}
                   className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 font-outer-sans"

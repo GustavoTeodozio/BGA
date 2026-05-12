@@ -154,9 +154,17 @@ export function AdminSales() {
                     <td className="py-3 px-4 hidden lg:table-cell">
                       {(() => {
                         const inst = s.installments ?? 1;
-                        return inst === 1
-                          ? <span className="text-xs text-gray-500">À vista</span>
-                          : <span className="text-xs text-blue-600 font-medium">{inst}x de {fmt(Number(s.value) / inst)}</span>;
+                        if (inst === 1) return <span className="text-xs text-gray-500">À vista</span>;
+                        const parcel = fmt(Number(s.value) / inst);
+                        const firstDate = s.firstPaymentDate
+                          ? new Date(s.firstPaymentDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                          : null;
+                        return (
+                          <div>
+                            <span className="text-xs text-blue-600 font-medium">{inst}x de {parcel}</span>
+                            {firstDate && <p className="text-[10px] text-gray-400 mt-0.5">1º em {firstDate}</p>}
+                          </div>
+                        );
                       })()}
                     </td>
                     <td className="py-3 px-4 hidden lg:table-cell">

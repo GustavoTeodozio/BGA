@@ -682,9 +682,10 @@ model Sale {
   tenant        Tenant     @relation(fields: [tenantId], references: [id])
   clientName    String
   companyName   String?
-  value         Decimal
-  installments  Int        @default(1)
-  status        SaleStatus @default(FECHADA)
+  value             Decimal
+  installments      Int        @default(1)
+  firstPaymentDate  DateTime?
+  status            SaleStatus @default(FECHADA)
   description   String?
   budgetId      String?    @unique
   budget        Budget?    @relation("BudgetSale", fields: [budgetId], references: [id])
