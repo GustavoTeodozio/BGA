@@ -48,6 +48,7 @@ export function VendedorSales() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [editSale, setEditSale] = useState<any | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
 
@@ -70,12 +71,31 @@ export function VendedorSales() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['vendedor'] }); setShowModal(false); },
   });
 
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => api.patch(`/vendedor/sales/${id}`, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['vendedor'] }); setShowModal(false); setEditSale(null); },
+  });
+
   const deleteMut = useMutation({
     mutationFn: (id: string) => api.delete(`/vendedor/sales/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['vendedor', 'sales'] }),
   });
 
   const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  function openEdit(s: any) {
+    setEditSale(s);
+    setForm({
+      clientName: s.clientName ?? '',
+      companyName: s.companyName ?? '',
+      value: String(Number(s.value)),
+      installments: String(s.installments ?? 1),
+      firstPaymentDate: s.firstPaymentDate ? s.firstPaymentDate.slice(0, 10) : '',
+      description: s.description ?? '',
+      status: s.status ?? 'FECHADA',
+    });
+    setShowModal(true);
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,8 +105,14 @@ export function VendedorSales() {
       installments: Number(form.installments),
     };
     if (!payload.firstPaymentDate) delete payload.firstPaymentDate;
-    createMut.mutate(payload);
+    if (editSale) {
+      updateMut.mutate({ id: editSale.id, data: payload });
+    } else {
+      createMut.mutate(payload);
+    }
   };
+
+  const isSaving = createMut.isPending || updateMut.isPending;
 
   const closedSales = allSales.filter((s: any) => s.status === 'FECHADA');
   const totalRevenue = closedSales.reduce((sum: number, s: any) => sum + Number(s.value), 0);
@@ -102,7 +128,7 @@ export function VendedorSales() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
         <p className="text-gray-500 text-sm font-outer-sans">Registre e acompanhe suas vendas</p>
         <button
-          onClick={() => { setForm(EMPTY_FORM); setShowModal(true); }}
+          onClick={() => { setEditSale(null); setForm(EMPTY_FORM); setShowModal(true); }}
           className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-green-500/25 transition-all duration-200 flex items-center gap-2 font-outer-sans whitespace-nowrap"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -251,17 +277,29 @@ export function VendedorSales() {
 
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
                     <span className="text-[10px] text-gray-400">{new Date(s.closedAt).toLocaleDateString('pt-BR')}</span>
-                    <button
-                      onClick={async () => {
-                        const ok = await confirm({ title: 'Excluir venda', message: 'Excluir esta venda?', confirmText: 'Excluir' });
-                        if (ok) deleteMut.mutate(s.id);
-                      }}
-                      className="w-7 h-7 rounded-lg hover:bg-red-50 flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onClick={() => openEdit(s)}
+                        className="w-7 h-7 rounded-lg hover:bg-blue-50 flex items-center justify-center transition-colors"
+                        title="Editar"
+                      >
+                        <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const ok = await confirm({ title: 'Excluir venda', message: 'Excluir esta venda?', confirmText: 'Excluir' });
+                          if (ok) deleteMut.mutate(s.id);
+                        }}
+                        className="w-7 h-7 rounded-lg hover:bg-red-50 flex items-center justify-center transition-colors"
+                        title="Excluir"
+                      >
+                        <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -272,11 +310,13 @@ export function VendedorSales() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { setShowModal(false); setEditSale(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleSubmit}>
               <div className="p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
-                <h2 className="text-lg font-bold text-gray-800 font-outer-sans">Registrar Venda</h2>
+                <h2 className="text-lg font-bold text-gray-800 font-outer-sans">
+                  {editSale ? 'Editar Venda' : 'Registrar Venda'}
+                </h2>
               </div>
               <div className="p-6 space-y-4">
                 <div>
@@ -393,16 +433,16 @@ export function VendedorSales() {
               </div>
               <div className="p-6 border-t border-gray-100 flex justify-end gap-3 sticky bottom-0 bg-white">
                 <button
-                  type="button" onClick={() => setShowModal(false)}
+                  type="button" onClick={() => { setShowModal(false); setEditSale(null); }}
                   className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 font-outer-sans"
                 >
                   Cancelar
                 </button>
                 <button
-                  type="submit" disabled={createMut.isPending}
+                  type="submit" disabled={isSaving}
                   className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all duration-200 font-outer-sans disabled:opacity-50"
                 >
-                  {createMut.isPending ? 'Registrando...' : 'Registrar'}
+                  {isSaving ? 'Salvando...' : editSale ? 'Salvar' : 'Registrar'}
                 </button>
               </div>
             </form>
