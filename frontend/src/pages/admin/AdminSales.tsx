@@ -6,6 +6,19 @@ import { useDialog } from '../../components/ConfirmDialog';
 const COMMISSION_RATE = 0.04;
 const INSTALLMENT_OPTIONS = [1,2,3,4,5,6,7,8,9,10,11,12,18,24,36,48,60];
 
+function addMonths(date: Date, months: number): Date {
+  const d = new Date(date); d.setMonth(d.getMonth() + months); return d;
+}
+function buildSchedule(firstPaymentDate: string, installments: number, value: number) {
+  if (!firstPaymentDate || installments <= 1) return [];
+  const base = new Date(firstPaymentDate + 'T12:00:00');
+  const parcel = value / installments;
+  return Array.from({ length: installments }, (_, i) => ({ date: addMonths(base, i), amount: parcel }));
+}
+function formatDate(d: Date) {
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   EM_ANDAMENTO: { label: 'Em Andamento', color: 'bg-blue-100 text-blue-700' },
   FECHADA:      { label: 'Fechada',      color: 'bg-green-100 text-green-700' },
@@ -23,6 +36,7 @@ export function AdminSales() {
   const [editSale, setEditSale] = useState<any | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ['admin', 'sales'],
@@ -37,6 +51,12 @@ export function AdminSales() {
   const updateMut = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => api.patch(`/admin/sales/${id}`, data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'sales'] }); closeModal(); },
+  });
+
+  const toggleInstallmentMut = useMutation({
+    mutationFn: ({ id, index, paid }: { id: string; index: number; paid: boolean }) =>
+      api.patch(`/admin/sales/${id}/installments`, { index, paid }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'sales'] }),
   });
 
   const deleteMut = useMutation({
@@ -215,14 +235,54 @@ export function AdminSales() {
                       {(() => {
                         const sInst = s.installments ?? 1;
                         if (sInst === 1) return <span className="text-xs text-gray-500">À vista</span>;
-                        const parcel = fmt(Number(s.value) / sInst);
-                        const firstDate = s.firstPaymentDate
-                          ? new Date(s.firstPaymentDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                          : null;
+                        const value = Number(s.value);
+                        const schedule = s.firstPaymentDate ? buildSchedule(s.firstPaymentDate.slice(0, 10), sInst, value) : [];
+                        const paid: boolean[] = Array.isArray(s.installmentsPaid) ? s.installmentsPaid : [];
+                        const paidCount = paid.filter(Boolean).length;
+                        const isExp = expandedId === s.id;
                         return (
                           <div>
-                            <span className="text-xs text-blue-600 font-medium">{sInst}x de {parcel}</span>
-                            {firstDate && <p className="text-[10px] text-gray-400 mt-0.5">1º em {firstDate}</p>}
+                            <button
+                              onClick={() => setExpandedId(isExp ? null : s.id)}
+                              className="text-left"
+                            >
+                              <span className="text-xs text-blue-600 font-medium">{sInst}x de {fmt(value / sInst)}</span>
+                              {schedule.length > 0 && (
+                                <p className="text-[10px] mt-0.5">
+                                  <span className={paidCount === sInst ? 'text-emerald-600 font-semibold' : 'text-gray-400'}>
+                                    {paidCount}/{sInst} pagas
+                                  </span>
+                                </p>
+                              )}
+                            </button>
+                            {isExp && schedule.length > 0 && (
+                              <div className="mt-2 border border-blue-100 rounded-lg overflow-hidden w-56">
+                                <div className="bg-blue-50 px-2 py-1 flex justify-between">
+                                  <span className="text-[10px] font-semibold text-blue-600 font-outer-sans uppercase">Parcelas</span>
+                                  <span className="text-[10px] text-blue-500">{paidCount}/{sInst}</span>
+                                </div>
+                                <div className="divide-y divide-gray-50 max-h-44 overflow-y-auto">
+                                  {schedule.map((item, i) => {
+                                    const isPaid = paid[i] ?? false;
+                                    return (
+                                      <div key={i} className={`flex items-center justify-between px-2 py-1.5 ${isPaid ? 'bg-emerald-50' : ''}`}>
+                                        <div className="flex items-center gap-1.5">
+                                          <span className={`w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center shrink-0 ${isPaid ? 'bg-emerald-200 text-emerald-700' : 'bg-blue-100 text-blue-600'}`}>{i+1}</span>
+                                          <span className={`text-[10px] ${isPaid ? 'line-through text-emerald-600' : 'text-gray-600'}`}>{formatDate(item.date)}</span>
+                                        </div>
+                                        <button
+                                          onClick={() => toggleInstallmentMut.mutate({ id: s.id, index: i, paid: !isPaid })}
+                                          title={isPaid ? 'Marcar pendente' : 'Marcar paga'}
+                                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${isPaid ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 hover:border-emerald-400 bg-white'}`}
+                                        >
+                                          {isPaid && <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })()}

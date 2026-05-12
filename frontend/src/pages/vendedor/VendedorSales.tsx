@@ -76,6 +76,12 @@ export function VendedorSales() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['vendedor'] }); setShowModal(false); setEditSale(null); },
   });
 
+  const toggleInstallmentMut = useMutation({
+    mutationFn: ({ id, index, paid }: { id: string; index: number; paid: boolean }) =>
+      api.patch(`/vendedor/sales/${id}/installments`, { index, paid }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['vendedor', 'sales'] }),
+  });
+
   const deleteMut = useMutation({
     mutationFn: (id: string) => api.delete(`/vendedor/sales/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['vendedor', 'sales'] }),
@@ -199,6 +205,8 @@ export function VendedorSales() {
               ? buildSchedule(s.firstPaymentDate.slice(0, 10), sInst, value)
               : [];
             const isExpanded = expandedId === s.id;
+            const paid: boolean[] = Array.isArray(s.installmentsPaid) ? s.installmentsPaid : [];
+            const paidCount = paid.filter(Boolean).length;
 
             return (
               <div key={s.id} className="bg-white rounded-xl border border-gray-100 hover:shadow-lg transition-all duration-300 group">
@@ -238,21 +246,35 @@ export function VendedorSales() {
                   {/* Schedule expandido */}
                   {isExpanded && schedule.length > 0 && (
                     <div className="mt-2 border border-blue-100 rounded-lg overflow-hidden">
-                      <div className="bg-blue-50 px-3 py-1.5">
+                      <div className="bg-blue-50 px-3 py-1.5 flex items-center justify-between">
                         <p className="text-[10px] font-semibold text-blue-600 font-outer-sans uppercase tracking-wide">Cronograma de pagamentos</p>
+                        <span className="text-[10px] text-blue-500 font-outer-sans">{paidCount}/{sInst} pagas</span>
                       </div>
-                      <div className="divide-y divide-gray-50 max-h-48 overflow-y-auto">
-                        {schedule.map((item, i) => (
-                          <div key={i} className="flex items-center justify-between px-3 py-1.5">
+                      <div className="divide-y divide-gray-50 max-h-52 overflow-y-auto">
+                        {schedule.map((item, i) => {
+                          const isPaid = paid[i] ?? false;
+                          return (
+                          <div key={i} className={`flex items-center justify-between px-3 py-2 transition-colors ${isPaid ? 'bg-emerald-50' : ''}`}>
                             <div className="flex items-center gap-2">
-                              <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold font-outer-sans flex items-center justify-center shrink-0">
+                              <span className={`w-5 h-5 rounded-full text-[10px] font-bold font-outer-sans flex items-center justify-center shrink-0 ${isPaid ? 'bg-emerald-200 text-emerald-700' : 'bg-blue-100 text-blue-600'}`}>
                                 {i + 1}
                               </span>
-                              <span className="text-xs text-gray-600 font-outer-sans">{formatDate(item.date)}</span>
+                              <span className={`text-xs font-outer-sans ${isPaid ? 'text-emerald-700 line-through' : 'text-gray-600'}`}>{formatDate(item.date)}</span>
                             </div>
-                            <span className="text-xs font-semibold text-gray-700 font-outer-sans">{fmt(item.amount)}</span>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-semibold font-outer-sans ${isPaid ? 'text-emerald-600' : 'text-gray-700'}`}>{fmt(item.amount)}</span>
+                              <button
+                                onClick={() => toggleInstallmentMut.mutate({ id: s.id, index: i, paid: !isPaid })}
+                                disabled={toggleInstallmentMut.isPending}
+                                title={isPaid ? 'Marcar como pendente' : 'Marcar como paga'}
+                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${isPaid ? 'bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600' : 'border-gray-300 hover:border-emerald-400 bg-white'}`}
+                              >
+                                {isPaid && <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                              </button>
+                            </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}

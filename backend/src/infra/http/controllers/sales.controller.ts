@@ -20,6 +20,7 @@ const updateSchema = z.object({
   value: z.preprocess((v) => (v !== undefined ? Number(v) : undefined), z.number().positive().optional()),
   installments: z.preprocess((v) => (v !== undefined ? Number(v) : undefined), z.number().int().min(1).max(120).optional()),
   firstPaymentDate: z.preprocess((v) => (v ? new Date(v as string) : undefined), z.date().optional()),
+  installmentsPaid: z.array(z.boolean()).optional(),
   description: z.string().nullable().optional(),
   status: z.enum(['EM_ANDAMENTO', 'FECHADA', 'PERDIDA']).optional(),
 });
@@ -133,6 +134,27 @@ export const updateSale = async (req: Request, res: Response) => {
   const sale = await prisma.sale.update({
     where: { id: saleId },
     data: body,
+    include: { closedBy: { select: { id: true, name: true, role: true } } },
+  });
+
+  return res.json(sale);
+};
+
+export const toggleInstallment = async (req: Request, res: Response) => {
+  const { userId, role } = req.auth!;
+  const { saleId } = req.params;
+  const { index, paid } = req.body as { index: number; paid: boolean };
+
+  const existing = await prisma.sale.findUnique({ where: { id: saleId } });
+  if (!existing) throw new AppError('Venda não encontrada', 404);
+  if (role !== 'ADMIN' && existing.closedById !== userId) throw new AppError('Acesso negado', 403);
+
+  const current = Array.isArray(existing.installmentsPaid) ? (existing.installmentsPaid as boolean[]) : [];
+  const updated = Array.from({ length: existing.installments }, (_, i) => (i === index ? paid : (current[i] ?? false)));
+
+  const sale = await prisma.sale.update({
+    where: { id: saleId },
+    data: { installmentsPaid: updated as any },
     include: { closedBy: { select: { id: true, name: true, role: true } } },
   });
 

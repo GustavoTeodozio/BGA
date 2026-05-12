@@ -25,6 +25,7 @@ import {
   createSale,
   updateSale,
   deleteSale,
+  toggleInstallment,
   getVendedorStats,
 } from '../controllers/sales.controller';
 import {
@@ -97,6 +98,7 @@ vendedorRoutes.get('/sales', asyncHandler(listSales));
 vendedorRoutes.get('/sales/:saleId', asyncHandler(getSale));
 vendedorRoutes.post('/sales', asyncHandler(createSale));
 vendedorRoutes.patch('/sales/:saleId', asyncHandler(updateSale));
+vendedorRoutes.patch('/sales/:saleId/installments', asyncHandler(toggleInstallment));
 vendedorRoutes.delete('/sales/:saleId', asyncHandler(deleteSale));
 
 // Tasks/Kanban

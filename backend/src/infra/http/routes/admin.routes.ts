@@ -66,6 +66,7 @@ import {
   createSale,
   updateSale,
   deleteSale,
+  toggleInstallment,
 } from '../controllers/sales.controller';
 import {
   listProjects,
@@ -194,6 +195,7 @@ adminRoutes.get('/sales', asyncHandler(listSales));
 adminRoutes.get('/sales/:saleId', asyncHandler(getSale));
 adminRoutes.post('/sales', asyncHandler(createSale));
 adminRoutes.patch('/sales/:saleId', asyncHandler(updateSale));
+adminRoutes.patch('/sales/:saleId/installments', asyncHandler(toggleInstallment));
 adminRoutes.delete('/sales/:saleId', asyncHandler(deleteSale));
 
 // Projects (admin vê todos) — rotas fixas antes das parametrizadas

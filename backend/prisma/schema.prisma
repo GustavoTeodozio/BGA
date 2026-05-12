@@ -685,6 +685,7 @@ model Sale {
   value             Decimal
   installments      Int        @default(1)
   firstPaymentDate  DateTime?
+  installmentsPaid  Json       @default("[]")
   status            SaleStatus @default(FECHADA)
   description   String?
   budgetId      String?    @unique
