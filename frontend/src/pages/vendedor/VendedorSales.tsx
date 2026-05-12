@@ -5,6 +5,8 @@ import { useDialog } from '../../components/ConfirmDialog';
 
 const COMMISSION_RATE = 0.04; // 4%
 
+const INSTALLMENT_OPTIONS = [1,2,3,4,5,6,7,8,9,10,11,12,18,24,36,48,60];
+
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   EM_ANDAMENTO: { label: 'Em Andamento', color: 'bg-blue-100 text-blue-700' },
   FECHADA:      { label: 'Fechada',      color: 'bg-green-100 text-green-700' },
@@ -16,7 +18,7 @@ export function VendedorSales() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ clientName: '', companyName: '', value: '', description: '', status: 'FECHADA' });
+  const [form, setForm] = useState({ clientName: '', companyName: '', value: '', installments: '1', description: '', status: 'FECHADA' });
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ['vendedor', 'sales', filter],
@@ -48,7 +50,7 @@ export function VendedorSales() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createMut.mutate({ ...form, value: Number(form.value) });
+    createMut.mutate({ ...form, value: Number(form.value), installments: Number(form.installments) });
   };
 
   // Commission calculations from all (unfiltered) closed sales
@@ -62,7 +64,7 @@ export function VendedorSales() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
         <p className="text-gray-500 text-sm font-outer-sans">Registre e acompanhe suas vendas</p>
         <button
-          onClick={() => { setForm({ clientName: '', companyName: '', value: '', description: '', status: 'FECHADA' }); setShowModal(true); }}
+          onClick={() => { setForm({ clientName: '', companyName: '', value: '', installments: '1', description: '', status: 'FECHADA' }); setShowModal(true); }}
           className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-green-500/25 transition-all duration-200 flex items-center gap-2 font-outer-sans whitespace-nowrap"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,9 +144,28 @@ export function VendedorSales() {
 
                   <p className="text-2xl font-bold text-green-600 font-outer-sans">{fmt(value)}</p>
 
+                  {/* Installments */}
+                  {(() => {
+                    const inst = s.installments ?? 1;
+                    const parcel = value / inst;
+                    return (
+                      <div className="mt-2 flex items-center gap-1.5 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5">
+                        <svg className="w-3.5 h-3.5 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        <span className="text-xs font-outer-sans text-blue-700">
+                          {inst === 1
+                            ? 'À vista'
+                            : <>{inst}x de <span className="font-bold">{fmt(parcel)}</span></>
+                          }
+                        </span>
+                      </div>
+                    );
+                  })()}
+
                   {/* Commission badge */}
                   {commission !== null ? (
-                    <div className="mt-2 flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-1.5">
+                    <div className="mt-1.5 flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-1.5">
                       <svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -153,7 +174,7 @@ export function VendedorSales() {
                       </span>
                     </div>
                   ) : (
-                    <div className="mt-2 flex items-center gap-1.5 bg-gray-50 border border-gray-100 rounded-lg px-3 py-1.5">
+                    <div className="mt-1.5 flex items-center gap-1.5 bg-gray-50 border border-gray-100 rounded-lg px-3 py-1.5">
                       <span className="text-xs font-outer-sans text-gray-400">Sem comissão — venda não fechada</span>
                     </div>
                   )}
@@ -216,6 +237,25 @@ export function VendedorSales() {
                   {form.value && Number(form.value) > 0 && (
                     <p className="text-xs text-emerald-600 mt-1 font-outer-sans">
                       Comissão estimada (4%): {fmt(Number(form.value) * COMMISSION_RATE)}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 font-outer-sans">Parcelamento</label>
+                  <select
+                    value={form.installments}
+                    onChange={(e) => setForm({ ...form, installments: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent font-outer-sans bg-white"
+                  >
+                    {INSTALLMENT_OPTIONS.map(n => (
+                      <option key={n} value={n}>
+                        {n === 1 ? 'À vista' : `${n}x${form.value && Number(form.value) > 0 ? ` — ${fmt(Number(form.value) / n)} / parcela` : ''}`}
+                      </option>
+                    ))}
+                  </select>
+                  {form.value && Number(form.value) > 0 && Number(form.installments) > 1 && (
+                    <p className="text-xs text-blue-600 mt-1 font-outer-sans">
+                      {form.installments}x de {fmt(Number(form.value) / Number(form.installments))}
                     </p>
                   )}
                 </div>

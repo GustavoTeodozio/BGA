@@ -683,6 +683,7 @@ model Sale {
   clientName    String
   companyName   String?
   value         Decimal
+  installments  Int        @default(1)
   status        SaleStatus @default(FECHADA)
   description   String?
   budgetId      String?    @unique

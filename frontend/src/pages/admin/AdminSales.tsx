@@ -133,6 +133,7 @@ export function AdminSales() {
                   <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans hidden sm:table-cell">Empresa</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans hidden md:table-cell">Vendedor</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans">Valor</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans hidden lg:table-cell">Parcelas</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans hidden lg:table-cell">Comissão</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans">Status</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600 font-outer-sans hidden lg:table-cell">Data</th>
@@ -150,6 +151,14 @@ export function AdminSales() {
                       </span>
                     </td>
                     <td className="py-3 px-4 font-bold text-green-600">{fmt(Number(s.value))}</td>
+                    <td className="py-3 px-4 hidden lg:table-cell">
+                      {(() => {
+                        const inst = s.installments ?? 1;
+                        return inst === 1
+                          ? <span className="text-xs text-gray-500">À vista</span>
+                          : <span className="text-xs text-blue-600 font-medium">{inst}x de {fmt(Number(s.value) / inst)}</span>;
+                      })()}
+                    </td>
                     <td className="py-3 px-4 hidden lg:table-cell">
                       {s.status === 'FECHADA' ? (
                         <span className="text-emerald-600 font-semibold text-xs">

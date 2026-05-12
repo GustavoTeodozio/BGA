@@ -7,6 +7,7 @@ const createSchema = z.object({
   clientName: z.string().min(1),
   companyName: z.string().optional(),
   value: z.preprocess((v) => Number(v), z.number().positive()),
+  installments: z.preprocess((v) => (v !== undefined ? Number(v) : 1), z.number().int().min(1).max(120)).default(1),
   description: z.string().optional(),
   budgetId: z.string().uuid().optional(),
   status: z.enum(['EM_ANDAMENTO', 'FECHADA', 'PERDIDA']).default('FECHADA'),
@@ -16,6 +17,7 @@ const updateSchema = z.object({
   clientName: z.string().min(1).optional(),
   companyName: z.string().nullable().optional(),
   value: z.preprocess((v) => (v !== undefined ? Number(v) : undefined), z.number().positive().optional()),
+  installments: z.preprocess((v) => (v !== undefined ? Number(v) : undefined), z.number().int().min(1).max(120).optional()),
   description: z.string().nullable().optional(),
   status: z.enum(['EM_ANDAMENTO', 'FECHADA', 'PERDIDA']).optional(),
 });
@@ -97,6 +99,7 @@ export const createSale = async (req: Request, res: Response) => {
         clientName: body.clientName,
         companyName: body.companyName,
         value: body.value,
+        installments: body.installments,
         description: body.description,
         status: body.status,
         budgetId: body.budgetId,
