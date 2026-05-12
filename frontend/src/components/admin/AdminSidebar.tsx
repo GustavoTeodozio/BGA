@@ -100,6 +100,11 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
     </svg>
   );
+  const SalesIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+    </svg>
+  );
   const ProjectsIcon = () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -140,6 +145,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       { key: 'clients',   path: '/admin/clients',    label: 'Clientes',      icon: ClientsIcon,    description: 'Gestão de clientes' },
       { key: 'notes',     path: '/admin/notes',      label: 'Anotações',     icon: NotesIcon,      description: 'Todas as anotações' },
       { key: 'budgets',   path: '/admin/budgets',    label: 'Orçamentos',    icon: BudgetIcon,     description: 'Todos os orçamentos' },
+      { key: 'sales',     path: '/admin/sales',      label: 'Vendas',        icon: SalesIcon,      description: 'Todas as vendas' },
       { key: 'projects',  path: '/admin/projects',   label: 'Projetos',      icon: ProjectsIcon,   description: 'Todos os projetos' },
       { key: 'team',      path: '/admin/team',       label: 'Equipe',        icon: TeamIcon,       description: 'Vendedores e projetistas' },
       { key: 'employees', path: '/admin/employees',  label: 'Funcionários',  icon: EmployeesIcon,  description: 'Equipe de montagem' },

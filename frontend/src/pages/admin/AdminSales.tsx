@@ -29,6 +29,11 @@ export function AdminSales() {
     queryFn: async () => { const r = await api.get('/admin/sales'); return r.data; },
   });
 
+  const createMut = useMutation({
+    mutationFn: (data: any) => api.post('/admin/sales', data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'sales'] }); closeModal(); },
+  });
+
   const updateMut = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => api.patch(`/admin/sales/${id}`, data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'sales'] }); closeModal(); },
@@ -40,6 +45,12 @@ export function AdminSales() {
   });
 
   const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  function openCreate() {
+    setEditSale(null);
+    setForm(EMPTY_FORM);
+    setShowModal(true);
+  }
 
   function openEdit(s: any) {
     setEditSale(s);
@@ -63,11 +74,16 @@ export function AdminSales() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!editSale) return;
     const payload: any = { ...form, value: Number(form.value), installments: Number(form.installments) };
     if (!payload.firstPaymentDate) delete payload.firstPaymentDate;
-    updateMut.mutate({ id: editSale.id, data: payload });
+    if (editSale) {
+      updateMut.mutate({ id: editSale.id, data: payload });
+    } else {
+      createMut.mutate(payload);
+    }
   }
+
+  const isSaving = createMut.isPending || updateMut.isPending;
 
   const inst = Number(form.installments);
   const val = Number(form.value);
@@ -88,8 +104,17 @@ export function AdminSales() {
 
   return (
     <div className="animate-fade-in">
-      <div className="mb-6">
+      <div className="mb-6 flex items-center justify-between gap-4">
         <p className="text-gray-500 text-sm font-outer-sans">Visão geral de todas as vendas da equipe</p>
+        <button
+          onClick={openCreate}
+          className="flex items-center gap-2 px-4 py-2.5 bg-wine-600 hover:bg-wine-700 text-white rounded-xl text-sm font-semibold transition-colors font-outer-sans shrink-0"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Registrar Venda
+        </button>
       </div>
 
       {/* Summary cards */}
@@ -248,13 +273,13 @@ export function AdminSales() {
         </div>
       )}
 
-      {/* Edit modal */}
-      {showModal && editSale && (
+      {/* Create / Edit modal */}
+      {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={closeModal}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleSubmit}>
               <div className="p-6 border-b border-gray-100 sticky top-0 bg-white z-10 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-gray-800 font-outer-sans">Editar Venda</h2>
+                <h2 className="text-lg font-bold text-gray-800 font-outer-sans">{editSale ? 'Editar Venda' : 'Registrar Venda'}</h2>
                 <button type="button" onClick={closeModal} className="text-gray-400 hover:text-gray-600 transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -322,9 +347,9 @@ export function AdminSales() {
                   className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 font-outer-sans">
                   Cancelar
                 </button>
-                <button type="submit" disabled={updateMut.isPending}
+                <button type="submit" disabled={isSaving}
                   className="px-6 py-2.5 bg-wine-600 hover:bg-wine-700 text-white rounded-xl text-sm font-semibold transition-colors font-outer-sans disabled:opacity-50">
-                  {updateMut.isPending ? 'Salvando...' : 'Salvar'}
+                  {isSaving ? 'Salvando...' : editSale ? 'Salvar' : 'Registrar'}
                 </button>
               </div>
             </form>

@@ -11,6 +11,7 @@ export const ADMIN_ITEMS = [
   { key: 'clients',    label: 'Clientes',     description: 'Gestão de clientes' },
   { key: 'notes',      label: 'Anotações',    description: 'Todas as anotações' },
   { key: 'budgets',    label: 'Orçamentos',   description: 'Todos os orçamentos' },
+  { key: 'sales',      label: 'Vendas',       description: 'Todas as vendas' },
   { key: 'projects',   label: 'Projetos',     description: 'Todos os projetos' },
   { key: 'team',       label: 'Equipe',       description: 'Vendedores e projetistas' },
   { key: 'employees',  label: 'Funcionários', description: 'Equipe de montagem' },
